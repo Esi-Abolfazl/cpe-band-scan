@@ -118,21 +118,19 @@ function renderConnect() {
   const view = document.getElementById("view");
   const remember = el("input", { type: "checkbox", id: "remember", checked: state.remember ? "" : null,
                                  onchange: (event) => { state.remember = event.target.checked; } });
+  view.className = "connect";
   view.replaceChildren(
-    el("p", { class: "lede" }, copy.APP.connect_intro),
     el("div", { class: "card narrow" },
       heading("h2", copy.APP.connect_heading),
       field("router_url", "text", defaults.url),
       defaults.remembered
-        ? el("div", { class: "stack" },
-            el("p", { class: "note" }, copy.NOTES.password_remembered),
-            el("div", { class: "actions" }, action("forget", onForget, { class: "quiet" })))
+        ? el("div", { class: "actions" },
+            el("span", { class: "note" }, copy.NOTES.password_remembered),
+            action("forget", onForget, { class: "quiet" }))
         : el("div", { class: "stack" },
             field("password", "password"),
             el("label", { class: "choice" }, remember, help("FIELDS", "remember"))),
-      action("connect", onConnect, { class: "primary", id: "connect" }),
-      el("p", { class: "note" }, copy.NOTES.password_note)),
-    el("p", { class: "note narrow" }, copy.NOTES.vpn));
+      action("connect", onConnect, { class: "primary", id: "connect" })));
   const password = document.getElementById("password");
   if (password) password.addEventListener("keydown", (event) => { if (event.key === "Enter") onConnect(); });
 }
@@ -272,8 +270,7 @@ function scanCard() {
     el("div", { class: "form-row" },
       choices("scan_scope", state.scope, (value) => { state.scope = value; }, disabled),
       action("scan", () => onScan(SCOPES[state.scope]),
-             { class: state.results ? "" : "primary", disabled })),
-    el("p", { class: "note" }, copy.NOTES.vpn));
+             { class: state.results ? "" : "primary", disabled })));
 }
 
 function describe(event) {
@@ -807,6 +804,7 @@ async function onDeleteProfile(profile) {
 
 // ---- the page --------------------------------------------------------------
 function renderMain() {
+  document.getElementById("view").className = "";
   const view = document.getElementById("view");
   const children = [
     deviceLine(),

@@ -2,6 +2,8 @@
 that copy.py can turn into a sentence."""
 from __future__ import annotations
 
+import re
+
 from collections import OrderedDict
 
 from huawei_lte_api import exceptions as hx
@@ -29,6 +31,11 @@ def normalise_url(url: str) -> str:
     if not url.startswith(("http://", "https://")):
         url = "http://" + url
     return url.rstrip("/") + "/"
+
+
+def host(url: str) -> str:
+    """The address as a person types it: 192.168.8.1, not http://192.168.8.1/."""
+    return re.sub(r"^https?://", "", normalise_url(url)).rstrip("/")
 
 
 def _unreachable(error: OSError) -> RouterError:

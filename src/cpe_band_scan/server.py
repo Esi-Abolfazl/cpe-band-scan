@@ -20,10 +20,21 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 from . import copy, lockfreq, metrics, scanner, store
 from .device import probe
-from .router import Router, RouterError
+from .router import Router, RouterError, host
 
 WEB = Path(__file__).parent / "web"
 DEFAULT_URL = "http://192.168.8.1/"
+
+
+def finite(value):
+    """JSON has no spelling for NaN, and a browser refuses a body that carries one."""
+    if isinstance(value, float) and value != value:
+        return None
+    if isinstance(value, dict):
+        return {key: finite(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [finite(item) for item in value]
+    return value
 ALLOWED_HOSTS = ("127.0.0.1", "localhost")
 TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
          ".css": "text/css; charset=utf-8"}
@@ -112,7 +123,7 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _json(self, payload, status=200):
-        self._send(status, json.dumps(payload, default=str).encode(), "application/json")
+        self._send(status, json.dumps(finite(payload), default=str).encode(), "application/json")
 
     def _fail(self, code, status=409, **fields):
         self._json({"error": code, "message": copy.text("ERRORS", code, **fields)}, status)
@@ -142,7 +153,7 @@ class Handler(BaseHTTPRequestHandler):
     def _page(self):
         saved = store.settings()
         bootstrap = json.dumps({"token": self.session.token, "copy": copy.bundle(),
-                                "defaults": {"url": saved.get("router_url", DEFAULT_URL),
+                                "defaults": {"url": host(saved.get("router_url", DEFAULT_URL)),
                                              "remembered": bool(saved.get("password"))}})
         html = (WEB / "index.html").read_text(encoding="utf-8")
         self._send(200, html.replace("/*BOOTSTRAP*/", f"window.CPE_BAND_SCAN = {bootstrap};").encode(),
@@ -285,7 +296,7 @@ class Handler(BaseHTTPRequestHandler):
                 except KeyError:
                     return self._json({"error": "not_found"}, 404)
         except RouterError as error:
-            return self._fail(error.code, detail=error.detail, url=body.get("url") or DEFAULT_URL)
+            return self._fail(error.code, detail=error.detail, url=host(body.get("url") or DEFAULT_URL))
         except ValueError as error:
             return self._fail("bad_request", 400, detail=str(error))
         self._json({"error": "not_found"}, 404)

@@ -96,7 +96,7 @@ def test_a_wrong_password_comes_back_as_a_sentence_not_a_code(live):
                         {"url": "192.168.8.1", "password": "nope"}, token=session.token)
     assert status == 409
     assert body["error"] == "bad_password"
-    assert "admin page" in body["message"]
+    assert "admin password" in body["message"]
 
 
 @pytest.mark.parametrize("live", [fake_router_factory(
@@ -174,3 +174,23 @@ def test_a_non_numeric_since_is_a_bad_request_not_a_crash(live):
     session, port = live
     status, answer = call(port, "GET", "/api/events?since=abc", token=session.token)
     assert (status, answer["error"]) == (400, "bad_request")
+
+
+@pytest.mark.parametrize("live", [fake_router_factory(
+    {"device/signal": {"band": "20MHz@2850(B7) + 20MHz@100(B1)", "sinr": "12dB", "rsrq": "-11dB", "rsrp": "-85dBm"}})],
+    indirect=True)
+def test_a_router_without_5g_yields_json_a_browser_accepts(live):
+    """metrics reports a missing reading as nan; nan is not JSON, and fetch().json() throws on it."""
+    session, port = live
+    call(port, "POST", "/api/connect", {"url": "192.168.1.1", "password": "pw"}, token=session.token)
+    status, body = call(port, "GET", "/api/status", token=session.token)
+    assert status == 200
+    assert body["signal"]["nrsinr"] is None and body["signal"]["nrrsrp"] is None
+
+
+def test_the_page_shows_the_router_address_the_way_a_person_types_it(live):
+    from cpe_band_scan import store
+    store.save_settings(router_url="http://192.168.1.1/", username="admin")
+    session, port = live
+    _, page = call(port, "GET", "/")
+    assert '"url": "192.168.1.1"' in page

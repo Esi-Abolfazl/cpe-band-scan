@@ -5,9 +5,7 @@ APP = {
     "name": "CPE Band Scan",
     "tagline": "Find the band that gives you the steadiest connection.",
     "connect_heading": "Connect to your router",
-    "connect_intro": "CPE Band Scan signs in to your router, measures each band it supports, and locks the "
-                     "one that holds up best. Nothing is flashed, and you can switch back to automatic "
-                     "at any time.",
+    "connect_intro": "Measures every band your router supports and locks the steadiest one. Nothing is flashed.",
     "status_heading": "Your connection now",
     "results_heading": "Band results, best first",
     "profiles_heading": "Lock profiles",
@@ -23,36 +21,27 @@ FIELDS = {
     "router_url": {
         "label": "Router address",
         "placeholder": "192.168.8.1",
-        "help": "The address of your router's admin page. Most Huawei CPE routers answer at "
-                "192.168.8.1, some at 192.168.1.1. If you're not sure, check the label on the router "
-                "or open the address in a browser.",
+        "help": "Usually 192.168.8.1 or 192.168.1.1. It's on the router's label.",
     },
     "password": {
         "label": "Admin password",
         "placeholder": "",
-        "help": "The password for the router's admin page, which is usually not your Wi-Fi password. "
-                "CPE Band Scan keeps it in memory while it runs, never writes it to disk, and never sends "
-                "it anywhere except your own router.",
+        "help": "The router admin password, not the Wi-Fi one.",
     },
     "profile_name": {
         "label": "Profile name",
         "placeholder": "MCI — living room",
-        "help": "A name you'll recognise later, such as your carrier and where the router is standing. "
-                "CPE Band Scan suggests your carrier and today's date.",
+        "help": "Carrier and place, so you find it later.",
     },
     "remember": {
         "label": "Remember the password on this computer",
         "placeholder": "",
-        "help": "Saves the admin password in CPE Band Scan's settings file, readable by your user "
-                "account only, so you don't type it next time. Anyone who can sign in as you on this "
-                "computer can read it. Forget it from the connect screen whenever you like.",
+        "help": "Saved on this computer for your user account only. Forget it any time.",
     },
     "scan_scope": {
         "label": "What to scan",
         "placeholder": "",
-        "help": "Which bands the scan measures. All bands is the full picture. On a 5G NSA network "
-                "the 4G bands decide most, because the 5G carrier follows the 4G band the router is "
-                "anchored to.",
+        "help": "All bands is the full picture. On 5G NSA the 4G bands decide most.",
         "options": {
             "all": {"label": "All bands",
                     "help": "Every 4G band, then every 5G band. Takes 20 to 30 minutes."},
@@ -68,8 +57,7 @@ FIELDS = {
     "test_target": {
         "label": "Band to test",
         "placeholder": "",
-        "help": "What the test watches. Your current lock is measured as it is. Choosing a band from "
-                "the results locks it for the length of the test, then puts your lock back.",
+        "help": "A pick is locked for the test only. Your lock comes back after.",
         "options": {
             "current": {"label": "What you're on now",
                         "help": "Watches the connection as it is. Nothing on the router changes."},
@@ -81,16 +69,14 @@ FIELDS = {
     "test_minutes": {
         "label": "How long",
         "placeholder": "",
-        "help": "Longer tests catch the dips a short one misses. Two minutes shows whether a band is "
-                "steady; ten minutes is the one to trust before you settle on it.",
+        "help": "Two minutes shows if it's steady. Ten is the one to trust.",
         "options": {"1": {"label": "1 min", "help": ""}, "2": {"label": "2 min", "help": ""},
                     "5": {"label": "5 min", "help": ""}, "10": {"label": "10 min", "help": ""}},
     },
     "follow": {
         "label": "Follow",
         "placeholder": "",
-        "help": "Keeps the log scrolled to the newest line. Scrolling up switches it off so you can "
-                "read; tick it to catch up again.",
+        "help": "Keeps the newest line in view. Scrolling up pauses it.",
     },
 }
 
@@ -101,13 +87,11 @@ ACTIONS = {
     },
     "scan": {
         "label": "Start the scan",
-        "help": "Locks each band you chose in turn and measures it for about a minute, then ranks "
-                "them. Your connection drops for about half a minute every time the band changes.",
+        "help": "Locks each band for about a minute and ranks them. Internet drops at every change.",
     },
     "test": {
         "label": "Start the test",
-        "help": "Watches the chosen band for the chosen time and reports the lowest, typical and best "
-                "quality it saw. Use it when two bands scored close.",
+        "help": "Watches one band and reports its lowest, typical and best quality.",
     },
     "stop_test": {
         "label": "Stop the test",
@@ -115,8 +99,7 @@ ACTIONS = {
     },
     "apply": {
         "label": "Apply",
-        "help": "Locks the router to this band and keeps the other working bands as secondary carriers. "
-                "The connection drops for about 30 seconds, then comes back. The lock survives a restart.",
+        "help": "Locks this band. Internet drops for about 30 seconds.",
     },
     "clear": {
         "label": "Switch back to automatic",
@@ -124,18 +107,15 @@ ACTIONS = {
     },
     "cancel": {
         "label": "Stop the scan",
-        "help": "Stops after the band being measured and puts the router back how it arrived, lock and "
-                "all. Everything measured so far is kept.",
+        "help": "Stops after this band and puts your lock back. Results so far are kept.",
     },
     "save_profile": {
         "label": "Save current lock",
-        "help": "Stores the lock the router holds right now under a name, so you can apply it again "
-                "later: one profile per carrier or per place.",
+        "help": "Saves the current lock under a name.",
     },
     "apply_profile": {
         "label": "Apply",
-        "help": "Locks the router to this profile's bands. The connection drops for about 30 seconds, "
-                "then comes back.",
+        "help": "Locks these bands. Internet drops for about 30 seconds.",
     },
     "rename_profile": {
         "label": "Rename",
@@ -157,21 +137,13 @@ ACTIONS = {
 
 COLUMNS = {
     "rank": {"label": "#", "help": "Position in the ranking. The top row held the steadiest signal."},
-    "band": {"label": "Band", "help": "The band that was locked while this row was measured. "
-                                      "'Auto' is what your router chooses on its own, kept for comparison."},
-    "grade": {"label": "Rating", "help": "The row in one word, from how far the quality dropped and how "
-                                          "clean the channel was. Excellent and Good are safe picks."},
-    "floor": {"label": "Lowest", "help": "The lowest SINR during the measurement, in dB. This is "
-                                                  "what makes a call or a stream stutter. Above 0 is "
-                                                  "usable, above 5 is comfortable."},
+    "band": {"label": "Band", "help": "The band that was locked. Auto is the router's own choice."},
+    "grade": {"label": "Rating", "help": "Excellent and Good are safe picks."},
+    "floor": {"label": "Lowest", "help": "Lowest SINR seen, in dB. Above 0 usable, above 5 comfortable."},
     "sinr": {"label": "Typical", "help": "The middle SINR reading of the measurement, in dB. "
                                                   "Higher is better."},
-    "rsrq": {"label": "Channel", "help": "RSRQ in dB, how clean the channel is. Better than -12 "
-                                                  "is healthy. Worse usually means interference or a busy "
-                                                  "cell rather than distance."},
-    "rsrp": {"label": "Strength", "help": "RSRP in dBm, the raw strength. Above -90 it barely "
-                                                  "affects speed, so a band shouldn't be chosen on this "
-                                                  "alone."},
+    "rsrq": {"label": "Channel", "help": "RSRQ in dB. Better than -12 is healthy."},
+    "rsrp": {"label": "Strength", "help": "RSRP in dBm. Above -90 it barely matters."},
     "nr_sinr": {"label": "5G quality", "help": "SINR of the 5G carrier in dB, when one was connected."},
     "five_g": {"label": "5G", "help": "Whether the 5G carrier stayed up on this band. Bands that lose it "
                                        "are never recommended."},
@@ -185,22 +157,12 @@ GRADES = {"excellent": "Excellent", "good": "Good", "fair": "Fair", "poor": "Poo
 SIDES = {"lte": "4G", "nr": "5G", "trace": "test"}
 
 ERRORS = {
-    "unreachable": "Can't reach a router at {url}. Either that's not its address, or this computer isn't "
-                   "on the router's network. Check the address and try again.",
-    "not_huawei_api": "Something answered at {url}, but it isn't a Huawei router. Open that address in a "
-                      "browser to see what's there, then enter the right one.",
-    "bad_password": "That password didn't work. CPE Band Scan needs the password for the router's "
-                    "admin page, which is usually not the Wi-Fi password. Check the label on the "
-                    "router and try again.",
-    "locked_out": "The router is refusing sign-ins for a few minutes after too many wrong passwords. "
-                  "Wait 5 minutes, then try again.",
-    "firmware_not_supported": "This router runs firmware {detail}, and CPE Band Scan can only lock "
-                              "bands on firmware 4. Older firmware uses a different interface, and "
-                              "writing to it blindly can switch 5G off, so CPE Band Scan won't try. "
-                              "If this router gets a firmware 4 update later, try again.",
-    "no_band_lock": "This router signed in, but it has no band-lock page ({detail}), so CPE Band "
-                    "Scan can't change its bands. Check the address if this is not the router you "
-                    "meant, and try again after any firmware update.",
+    "unreachable": "No router answers at {url}. Check the address and that you're on its network.",
+    "not_huawei_api": "{url} answers, but it isn't a Huawei router. Check the address.",
+    "bad_password": "Wrong password. Use the router admin password, not the Wi-Fi one.",
+    "locked_out": "Too many wrong passwords. Wait 5 minutes, then try again.",
+    "firmware_not_supported": "Firmware {detail} isn't supported. Band lock needs firmware 4. Try again after an update.",
+    "no_band_lock": "This router has no band-lock page ({detail}). Check the address.",
     "api_refused": "The router refused the request ({detail}). This is usually temporary. Wait a moment "
                    "and try again.",
     "busy": "A scan is already running. Stop it first, or wait for it to finish.",
@@ -208,25 +170,18 @@ ERRORS = {
                      "then connect.",
     "bad_request": "CPE Band Scan got a request it can't act on ({detail}). Check what was sent and "
                    "try again.",
-    "crash": "CPE Band Scan stopped on an unexpected problem ({detail}). Check which bands your "
-             "router is on before you scan again, and keep this message if it happens twice.",
+    "crash": "Stopped on an unexpected problem ({detail}). Check your bands before scanning again.",
 }
 
 NOTES = {
-    "before_scan": "Scanning interrupts your connection. CPE Band Scan locks each band in turn, so the "
-                   "internet drops for about 30 seconds every time it moves to the next one. Expect "
-                   "20 to 30 minutes in all. You can keep working between the drops.",
-    "vpn": "A VPN is fine to keep on. Stay on one server for the whole scan, because switching servers "
-           "mid-run changes what you feel while the measurements stay the same. If CPE Band Scan can't reach "
-           "the router while the VPN is up, switch on your VPN's local network access setting.",
-    "password_note": "Unless you tick Remember, the password stays in memory while CPE Band Scan runs "
-                     "and is never saved. Change it afterwards if someone else may have seen it.",
+    "before_scan": "Internet drops for about 30 seconds at every band. Expect 20 to 30 minutes.",
+    "vpn": "A VPN is fine. Stay on one server for the whole scan.",
+    "password_note": "Kept in memory only, unless you tick Remember.",
     "password_remembered": "The password is remembered on this computer.",
     "lock_survives": "The lock stays in place after a restart. Switch back to automatic whenever you want.",
     "rescan_hint": "Scan again after you move the router, change SIM, or change provider.",
     "empty_runs": "No saved results yet. Finish a scan and it'll be here to compare against.",
-    "empty_profiles": "No profiles yet. Once the router holds a lock you like, save it here under a name "
-                      "and apply it again after you move or change carrier.",
+    "empty_profiles": "No profiles yet. Save a lock you like and apply it later.",
     "show_command": "Shows the full table and details of a saved run.",
     "profile_auto": "Automatic on both sides",
     "empty_results": "No results yet. Start a scan to fill this table.",
@@ -270,14 +225,12 @@ PROGRESS = {
     "refused": "{name} was refused by the router, so it was skipped.",
     "side_done": "Finished the {side} bands: {count} measured.",
     "applied": "Locked to {bands}. Your connection is back.",
-    "lock_written": "Locked to {bands}. The connection drops for about 30 seconds while the router "
-                    "re-attaches, then comes back.",
+    "lock_written": "Locked to {bands}. Internet drops for about 30 seconds.",
     "kept_auto": "Automatic held up better than any single band, so nothing was locked.",
     "unchanged": "No band did better than what you already had, so nothing was changed.",
     "cancelled": "Stopped, so nothing more will be measured.",
     "lock_back": "The band lock you had before the scan is back. Nothing else changed.",
-    "lock_lost": "The band lock you had couldn't be put back, so the router is choosing bands on "
-                 "its own. Pick a band from the results to lock it again.",
+    "lock_lost": "Your old lock couldn't be put back. The router is on automatic. Apply a band to lock again.",
     "trace_start": "Watching your connection as it is for {minutes} min. Nothing changes while this runs.",
     "trace_start_locked": "Locked to {name} for a {minutes} min test. Your own lock comes back when it ends.",
     "trace_done": "Test finished.",
