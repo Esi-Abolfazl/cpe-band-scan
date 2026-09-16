@@ -71,19 +71,14 @@
       "pattern": "os\\.environ|getenv\\(",
       "files": "^src/.*\\.py$",
       "exempt": [
-        "src/cpe_band_scan/store.py",
-        "src/cpe_band_scan/cli.py"
+        "src/cpe_band_scan/config.py"
       ],
-      "message": "config is read in one module — see docs/adoption-scorecard.md"
+      "message": "config is read in config.py and nowhere else"
     },
     {
       "id": "err-06",
       "pattern": "except (Exception|BaseException|\\([^)]*Exception[^)]*\\))[^\\n]*:\\s*\\n\\s*(pass|continue)\\b|except OSError[^\\n]*:\\s*\\n\\s*pass\\b",
       "files": "^src/.*\\.py$",
-      "exempt": [
-        "src/cpe_band_scan/metrics.py",
-        "src/cpe_band_scan/speed.py"
-      ],
       "message": "a swallowed failure — raise a RouterError code or say why at the code"
     },
     {
@@ -102,9 +97,6 @@
       "id": "llm-03",
       "pattern": "^(from|import)\\s",
       "files": "__init__\\.py$",
-      "exempt": [
-        "src/cpe_band_scan/__init__.py"
-      ],
       "message": "a package init re-exports nothing — import the real module"
     },
     {

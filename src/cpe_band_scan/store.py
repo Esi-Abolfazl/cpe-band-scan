@@ -9,11 +9,9 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from .config import home
+
 RUN_ID = re.compile(r"\A[0-9]{8}-[0-9]{6}(-[0-9]+)?\Z")
-
-
-def home() -> Path:
-    return Path(os.environ.get("CPE_BAND_SCAN_HOME") or Path.home() / ".cpe-band-scan")
 
 
 def runs_dir() -> Path:

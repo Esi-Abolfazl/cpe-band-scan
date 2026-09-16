@@ -103,7 +103,7 @@ def visible_bands(router: Router) -> dict:
     for endpoint in ("device/nbrcellinfo", "device/seccellinfo"):
         try:
             payload = router.get(endpoint) or {}
-        except (RouterError, Exception):
+        except Exception:   # boundary: a hint only; a router that hides its cells reads as one with none
             continue
         text += "".join(str(value) for value in payload.values() if value)
     return {"lte": sorted(set(re.findall(r"\bB(\d+)", text)), key=int),

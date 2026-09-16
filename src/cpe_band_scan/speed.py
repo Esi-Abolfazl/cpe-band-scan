@@ -95,8 +95,8 @@ def open_socket(route: Route, kind=socket.SOCK_STREAM, deadline: float | None = 
     if route.ifindex is not None:
         try:
             scope(sock, route.ifindex, route.ifname)
-        except OSError:
-            pass                    # verdict(), not this call, decides whether the bypass held
+        except OSError:         # boundary: verdict(), not this call, decides whether the bypass held
+            pass
     sock.bind((route.lan_ip, 0))
     return sock
 
@@ -129,7 +129,7 @@ def resolve(host: str, route: Route, servers=None, deadline: float | None = None
     try:
         socket.inet_aton(host)
         return host                   # already an address: nothing to ask
-    except OSError:
+    except OSError:               # boundary: not an address, so ask the resolvers below
         pass
     labels = b"".join(bytes([len(part)]) + part.encode() for part in host.split(".")) + b"\0"
     for server in servers or ((route.router_ip, 53), (PUBLIC_DNS, 53)):

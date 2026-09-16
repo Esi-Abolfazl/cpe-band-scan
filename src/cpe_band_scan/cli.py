@@ -4,22 +4,17 @@ from __future__ import annotations
 import argparse
 import getpass
 import json
-import os
 import sys
 from datetime import datetime
-from pathlib import Path
 
-from . import copy, lockfreq, metrics, scanner, speed, store
+from . import config, copy, lockfreq, metrics, scanner, speed, store
 from .device import probe
 from .router import Router, RouterError
 
-DEFAULT_URL = "http://192.168.8.1/"
-
-
 def parse(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="cpe-band-scan", description=copy.APP["tagline"], add_help=False)
-    parser.add_argument("--url", default=os.environ.get("CPE_BAND_SCAN_URL", DEFAULT_URL))
-    parser.add_argument("--user", default=os.environ.get("CPE_BAND_SCAN_USER", "admin"))
+    parser.add_argument("--url", default=config.router_url())
+    parser.add_argument("--user", default=config.username())
     subparsers = parser.add_subparsers(dest="command")
     subparsers.add_parser("help")
     subparsers.add_parser("status")
@@ -47,16 +42,7 @@ def parse(argv=None) -> argparse.Namespace:
 
 
 def read_password(args) -> str:
-    from_env = os.environ.get("CPE_BAND_SCAN_PASSWORD")
-    if from_env:
-        return from_env
-    env_file = Path(".env")
-    if env_file.exists():
-        for line in env_file.read_text(encoding="utf-8").splitlines():
-            key, _, value = line.partition("=")
-            if key.strip() == "PASSWORD" and value.strip():
-                return value.strip().strip("'\"")
-    return getpass.getpass(f"{copy.FIELDS['password']['label']}: ")
+    return config.password() or getpass.getpass(f"{copy.FIELDS['password']['label']}: ")
 
 
 def connect(args):

@@ -7,22 +7,6 @@
     ],
     "count": 71
   },
-  "env-reads-outside-config": {
-    "rule": "llm-12",
-    "pattern": "os\\.environ|getenv\\(",
-    "files": [
-      "src/cpe_band_scan/*.py"
-    ],
-    "count": 4
-  },
-  "broad-except-swallowed": {
-    "rule": "err-06",
-    "pattern": "except (Exception|BaseException|\\([^)]*Exception[^)]*\\))[^\\n]*:\\s*\\n\\s*(pass|continue)\\b|except OSError[^\\n]*:\\s*\\n\\s*pass\\b",
-    "files": [
-      "src/cpe_band_scan/*.py"
-    ],
-    "count": 3
-  },
   "route-literals-in-page": {
     "rule": "llm-01",
     "pattern": "[\"'`]/api/",
