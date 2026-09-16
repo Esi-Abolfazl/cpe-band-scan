@@ -40,8 +40,6 @@
     "fileSize": {
       "maxLines": 300,
       "exempt": [
-        "src/cpe_band_scan/web/app.js",
-        "tests/test_scanner.py",
         "scripts/check-repo.mjs"
       ]
     }
@@ -54,7 +52,6 @@
       "exempt": [
         "llmfw.config.json",
         "docs/conventions/**",
-        "docs/superpowers/**",
         "docs/adoption-scorecard.md"
       ],
       "message": "machine-specific path committed — move to the gitignored .local sibling"

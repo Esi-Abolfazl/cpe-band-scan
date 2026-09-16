@@ -5,8 +5,8 @@ import pytest
 
 from cpe_band_scan import cli, copy
 
-WEB_APP_JS = (Path(__file__).resolve().parents[1] / "src" / "cpe_band_scan"
-             / "web" / "app.js").read_text(encoding="utf-8")
+WEB = Path(__file__).resolve().parents[1] / "src" / "cpe_band_scan" / "web"
+WEB_APP_JS = "\n".join(p.read_text(encoding="utf-8") for p in sorted(WEB.glob("*.js")))
 
 
 def test_render_turns_an_event_into_a_sentence():
@@ -75,7 +75,7 @@ def test_the_password_cannot_be_passed_on_the_command_line():
 def test_apply_tells_the_truth_about_the_next_30_seconds(monkeypatch, capsys):
     from cpe_band_scan.router import Router
     from tests.fakes import FakeSession, factory
-    from tests.test_scanner import DEVICE
+    from tests.fake_scan_router import DEVICE
     router = Router("192.168.8.1", "pw", connection_factory=factory(FakeSession()))
     monkeypatch.setattr(cli, "connect", lambda args: (router, DEVICE))
     assert cli.main(["apply", "7", "--scell", "3"]) == 0

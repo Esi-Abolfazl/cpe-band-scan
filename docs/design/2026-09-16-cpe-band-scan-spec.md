@@ -1,3 +1,5 @@
+> History. The running product is described by `README.md`; where this spec and the code disagree, the code is truth.
+
 # CPE Band Scan — spec
 
 **Date:** 2026-09-16

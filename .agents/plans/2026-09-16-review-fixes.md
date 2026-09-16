@@ -1,3 +1,15 @@
+---
+status: done
+run-with: the session that executed it, 2026-09-16
+origin: docs/design/2026-09-16-cpe-band-scan-spec.md
+---
+
+---
+status: done
+run-with: the session that executed it, 2026-09-16
+origin: docs/design/2026-09-16-cpe-band-scan-spec.md
+---
+
 # CPE Band Scan Review Fixes Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -21,7 +33,7 @@
 - Every band change restores the lock the router arrived with on the way out, including cancel and crash, via `finally`.
 - Defaults: router `http://192.168.8.1/`, username `admin`, port `8765`.
 - Band-lock writes go to `api/net/lock-freq` only. Writing `LTEBand` to `api/net/net-mode` is forbidden anywhere in this codebase.
-- Work on a branch in the main checkout at `/Users/esi/Work/Other/cpe-band-scan`, not in a worktree: the test interpreter is `.venv/bin/python` inside that checkout. Every test command below is run from that directory.
+- Work on a branch in the main checkout, not in a worktree: the test interpreter is `.venv/bin/python` inside that checkout. Every test command below is run from that directory.
 - Commit messages follow the existing log: lowercase `fix:` / `test:` / `docs:` prefix, then a sentence that states the behaviour.
 
 ---

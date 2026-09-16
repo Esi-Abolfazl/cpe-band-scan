@@ -1,3 +1,5 @@
+> History. The page as shipped is described by `README.md` § Open the page; where this ruling and the code disagree, the code is truth.
+
 # Page redesign — human-first one-page app
 
 Replaces `docs/design-system.md` (ui-ux-pro-max rulings). Source of the spec: the 8 notes from the

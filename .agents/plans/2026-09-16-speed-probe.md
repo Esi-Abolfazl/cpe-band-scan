@@ -1,3 +1,15 @@
+---
+status: done
+run-with: the session that executed it, 2026-09-16
+origin: docs/design/2026-09-16-cpe-band-scan-spec.md
+---
+
+---
+status: done
+run-with: the session that executed it, 2026-09-16
+origin: docs/design/2026-09-16-cpe-band-scan-spec.md
+---
+
 # Per-band speed and ping probe — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
