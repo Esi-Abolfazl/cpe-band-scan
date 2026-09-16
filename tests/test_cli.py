@@ -190,3 +190,64 @@ def test_help_explains_each_scan_scope_in_the_catalogue_s_words(capsys):
     out = capsys.readouterr().out
     for option in copy.FIELDS["scan_scope"]["options"].values():
         assert option["help"] in out
+
+
+def test_scan_has_a_no_speed_switch_and_speed_is_on_by_default():
+    assert cli.parse(["scan"]).speed is True
+    assert cli.parse(["scan", "--no-speed"]).speed is False
+    assert cli.parse(["scan", "--no-speed", "4g", "7"]).speed is False
+
+
+def _run_with_speed():
+    row = {"grade": "excellent", "floor": 7.0, "sinr": 9.0, "rsrq": -9.0, "rsrp": -80.0,
+           "nrsinr": 12.0, "has5g": True, "band": "B7(N78)",
+           "speed": {"latency_ms": 85, "jitter_ms": 12, "mbps": 42.5, "bytes": 1, "seconds": 5.0}}
+    dead = dict(row, speed={"error": "no_answer"})
+    return {"speed": {"bypass": "confirmed", "lan_ip": "192.168.8.2", "public_ip": "5.1.1.1"},
+            "sides": {"lte": {"order": ["B7", "B3"], "results": {"B7": row, "B3": dead}}}}
+
+
+def test_results_table_adds_speed_and_ping_after_the_5g_column_only_when_the_run_has_them():
+    plain = {"sides": {"lte": {"order": ["B7"], "results": {"B7": {
+        "grade": "excellent", "floor": 7.0, "sinr": 9.0, "rsrq": -9.0, "rsrp": -80.0,
+        "nrsinr": 12.0, "has5g": True, "band": "B7(N78)"}}}}}
+    assert cli.column_keys(plain) == list(cli.BASE_KEYS)
+    keys = cli.column_keys(_run_with_speed())
+    assert keys[cli.SPEED_AT:cli.SPEED_AT + 2] == ["speed", "ping"]
+    assert keys[:cli.SPEED_AT] == list(cli.BASE_KEYS[:cli.SPEED_AT])
+    header, _, first, second = cli.results_table(_run_with_speed()).splitlines()
+    assert copy.COLUMNS["speed"]["label"] in header and copy.COLUMNS["ping"]["label"] in header
+    cells = [cell.strip() for cell in first.split("|")[1:-1]]
+    assert cells[cli.SPEED_AT] == "42.5" and cells[cli.SPEED_AT + 1] == "85"
+    dead_cells = [cell.strip() for cell in second.split("|")[1:-1]]
+    assert dead_cells[cli.SPEED_AT] == copy.NOTES["probe_no_answer"]
+
+
+def test_a_blocked_probe_adds_no_columns_but_keeps_its_sentence():
+    run = _run_with_speed()
+    run["speed"]["bypass"] = "blocked"
+    assert cli.column_keys(run) == list(cli.BASE_KEYS)
+    assert cli.speed_note(run) == copy.NOTES["probe_blocked"]
+
+
+def test_the_speed_note_names_the_verdict_and_is_silent_without_one():
+    assert cli.speed_note(_run_with_speed()) == copy.NOTES["probe_confirmed"]
+    assert cli.speed_note({"sides": {}}) == ""
+
+
+def test_render_says_speed_and_ping_when_a_result_has_them_and_not_when_the_probe_failed():
+    with_speed = cli.render({"type": "set_result", "name": "B7",
+                             "result": {"grade": "excellent", "floor": 7.0,
+                                        "speed": {"latency_ms": 85, "jitter_ms": 1, "mbps": 42.5, "bytes": 1, "seconds": 5}}})
+    assert "42.5" in with_speed and "85" in with_speed
+    failed = cli.render({"type": "set_result", "name": "B7",
+                         "result": {"grade": "excellent", "floor": 7.0, "speed": {"error": "no_answer"}}})
+    assert "Mbit" not in failed
+
+
+def test_render_opens_the_scan_with_the_bypass_verdict_when_there_is_one():
+    line = cli.render({"type": "run_start", "sides": ["lte"], "expect_5g": True, "baseline": {},
+                       "speed": {"bypass": "failed", "lan_ip": "", "public_ip": ""}})
+    assert copy.NOTES["probe_failed"] in line
+    plain = cli.render({"type": "run_start", "sides": ["lte"], "expect_5g": True, "baseline": {}})
+    assert "VPN" not in plain

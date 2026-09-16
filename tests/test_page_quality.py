@@ -150,3 +150,14 @@ def test_log_lines_do_not_repeat_the_progress_bar_and_colour_the_verdict():
     describe = re.search(r"function describe\(event\)\s*\{(.*?)\n\}", JS, re.S).group(1)
     assert "words.set_start" not in describe and "words.log_measuring" in describe
     assert "grade-${event.result.grade}" in describe and '"bad-text"' in describe
+
+
+def test_the_speed_toggle_is_a_native_checkbox_in_a_choice_row():
+    toggle = re.search(r"function toggle\([^)]*\)\s*\{(.*?)\n\}", JS, re.S).group(1)
+    assert 'type: "checkbox"' in toggle and 'class: "choice"' in toggle
+    assert 'help("FIELDS", key)' in toggle, "the label carries its hover explanation like every field"
+
+
+def test_speed_and_ping_cells_go_through_num_or_say_no_answer():
+    cells = re.search(r"function speedCells\([^)]*\)\s*\{(.*?)\n\}", JS, re.S).group(1)
+    assert "num(" in cells and "copy.NOTES.probe_no_answer" in cells

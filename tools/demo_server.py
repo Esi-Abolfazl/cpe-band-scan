@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from cpe_band_scan import server                          # noqa: E402
 from cpe_band_scan.router import Router                    # noqa: E402
-from tests.fakes import FakeSession, factory               # noqa: E402
+from tests.fakes import FakeProbe, FakeSession, factory     # noqa: E402
 
 # band -> (sinr, rsrq, rsrp, nrsinr, nrrsrp). "" is the auto/no-lock state. B3 and N78 are
 # built to win their side outright, so the demo scan always shows a real ranking, not a tie.
@@ -81,6 +81,12 @@ def _demo_router(url, password, username="admin"):
 # minutes; cap every sleep the scan/test does so it finishes in a few seconds while still
 # pacing the progress log enough to watch it move.
 server.SLEEP = lambda seconds: time.sleep(min(seconds, 0.15))
+# No internet in the demo: a fixed set of readings, cycled per band, and a proven bypass.
+_READINGS = [{"latency_ms": 62, "jitter_ms": 9, "mbps": 48.3, "bytes": 30_000_000, "seconds": 5.0},
+             {"latency_ms": 140, "jitter_ms": 40, "mbps": 9.8, "bytes": 6_100_000, "seconds": 5.0},
+             {"error": "no_answer"},
+             {"latency_ms": 71, "jitter_ms": 5, "mbps": 33.1, "bytes": 20_700_000, "seconds": 5.0}]
+server.PROBE = lambda url: FakeProbe(url, bypass="confirmed", readings=_READINGS * 3)
 
 session = server.Session(router_factory=_demo_router)
 session.connect("192.168.8.1", "demo")

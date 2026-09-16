@@ -9,7 +9,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from . import copy, lockfreq, metrics, scanner, store
+from . import copy, lockfreq, metrics, scanner, speed, store
 from .device import probe
 from .router import Router, RouterError
 
@@ -33,6 +33,8 @@ def parse(argv=None) -> argparse.Namespace:
     scan_parser.add_argument("args", nargs="*", default=[],
                              help="optional 4g or 5g, then any bands to measure")
     scan_parser.add_argument("--save", dest="save_name", default=None)
+    scan_parser.add_argument("--no-speed", dest="speed", action="store_false",
+                             help="skip the per-band speed and ping probe")
     apply_parser = subparsers.add_parser("apply")
     apply_parser.add_argument("bands")
     apply_parser.add_argument("--scell", default="")
@@ -75,7 +77,10 @@ def scan_target(args) -> tuple[tuple[str, ...], list[str]]:
 def render(event) -> str | None:
     kind = event.get("type")
     if kind == "run_start":
-        return copy.text("PROGRESS", "run_start", count=len(event.get("sides", [])))
+        line = copy.text("PROGRESS", "run_start", count=len(event.get("sides", [])))
+        if event.get("speed"):
+            line += " " + copy.text("NOTES", f"probe_{event['speed']['bypass']}")
+        return line
     if kind == "side_start":
         return copy.text("PROGRESS", "side_start", side=copy.SIDES[event["side"]],
                          count=event["total"], minutes=max(1, round(event["eta_s"] / 60)))
@@ -84,6 +89,11 @@ def render(event) -> str | None:
                          total=event["total"], minutes=max(1, round(event["eta_s"] / 60)))
     if kind == "set_result":
         result = event["result"]
+        reading = result.get("speed") or {}
+        if reading and "error" not in reading:
+            return copy.text("PROGRESS", "set_result_probe", name=event["name"],
+                             grade=copy.GRADES[result["grade"]], floor=f"{result['floor']:g}",
+                             mbps=f"{reading['mbps']:g}", ping=reading["latency_ms"])
         return copy.text("PROGRESS", "set_result", name=event["name"],
                          grade=copy.GRADES[result["grade"]], floor=f"{result['floor']:g}")
     if kind == "set_skipped":
@@ -109,21 +119,52 @@ def render(event) -> str | None:
     return None
 
 
+BASE_KEYS = ("rank", "band", "grade", "five_g", "floor", "sinr", "rsrq", "rsrp", "nr_sinr", "carriers")
+SPEED_KEYS = ("speed", "ping")
+SPEED_AT = 4            # after the 5G column; app.js mirrors both of these, test_parity checks it
+
+
+def shows_speed(run: dict) -> bool:
+    """A blocked probe measured no band: its sentence is still said, but no columns are added."""
+    report = run.get("speed")
+    return bool(report) and report.get("bypass") != "blocked"
+
+
+def column_keys(run: dict) -> list[str]:
+    keys = list(BASE_KEYS)
+    if shows_speed(run):
+        keys[SPEED_AT:SPEED_AT] = SPEED_KEYS
+    return keys
+
+
+def _cells(position: int, name: str, row: dict) -> dict:
+    probe = row.get("speed") or {}
+    answered = bool(probe) and "error" not in probe
+    return {"rank": str(position), "band": name, "grade": copy.GRADES[row["grade"]],
+            "five_g": "yes" if row["has5g"] else "no",
+            "speed": f"{probe['mbps']:g}" if answered else copy.NOTES["probe_no_answer"],
+            "ping": str(probe["latency_ms"]) if answered else copy.NOTES["probe_no_answer"],
+            "floor": f"{row['floor']:g}", "sinr": f"{row['sinr']:g}", "rsrq": f"{row['rsrq']:g}",
+            "rsrp": f"{row['rsrp']:g}", "nr_sinr": f"{row['nrsinr']:g}", "carriers": row["band"]}
+
+
 def results_table(run: dict) -> str:
     """The same columns the page shows, in the same order, in markdown, best first."""
-    keys = ("rank", "band", "grade", "five_g", "floor", "sinr", "rsrq", "rsrp", "nr_sinr", "carriers")
+    keys = column_keys(run)
     header = [copy.COLUMNS[key]["label"] or "-" for key in keys]
     lines = ["| " + " | ".join(header) + " |", "|" + "---|" * len(keys)]
     for side, record in run.get("sides", {}).items():
         for position, name in enumerate(record["order"] + [n for n in record["results"]
                                                            if n not in record["order"]], 1):
-            row = record["results"][name]
-            lines.append("| " + " | ".join([
-                str(position), name, copy.GRADES[row["grade"]], "yes" if row["has5g"] else "no",
-                f"{row['floor']:g}", f"{row['sinr']:g}", f"{row['rsrq']:g}", f"{row['rsrp']:g}",
-                f"{row['nrsinr']:g}", row["band"],
-            ]) + " |")
+            cells = _cells(position, name, record["results"][name])
+            lines.append("| " + " | ".join(cells[key] for key in keys) + " |")
     return "\n".join(lines)
+
+
+def speed_note(run: dict) -> str:
+    """The sentence that says what the speed and ping columns mean, or nothing."""
+    report = run.get("speed")
+    return copy.text("NOTES", f"probe_{report['bypass']}") if report else ""
 
 
 def _print_help() -> int:
@@ -164,6 +205,9 @@ def main(argv=None) -> int:
         run = store.load(args.run_id)
         print(run["name"])
         print(results_table(run))
+        note = speed_note(run)
+        if note:
+            print(note)
         return 0
 
     try:
@@ -195,13 +239,17 @@ def main(argv=None) -> int:
             print(copy.NOTES["before_scan"])
             print(copy.NOTES["vpn"])
             run = None
-            for event in scanner.scan(router, device, sides=sides, bands=bands or None):
+            speed_probe = speed.SpeedProbe(router.url) if args.speed else None
+            for event in scanner.scan(router, device, sides=sides, bands=bands or None, probe=speed_probe):
                 line = render(event)
                 if line:
                     print(f"[{datetime.now():%H:%M:%S}] {line}", flush=True)
                 if event["type"] == "done":
                     run = event["run"]
             print("\n" + results_table(run))
+            note = speed_note(run)
+            if note:
+                print(note)
             saved = store.save(run, name=args.save_name or store.default_name(device.carrier))
             print(copy.text("PROGRESS", "saved", name=saved["name"]))
         return 0

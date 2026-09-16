@@ -2,9 +2,9 @@ import time
 
 import pytest
 
-from cpe_band_scan import server
+from cpe_band_scan import scanner, server, speed
 from cpe_band_scan.router import Router
-from tests.fakes import FakeSession, factory
+from tests.fakes import FakeProbe, FakeSession, factory
 from tests.test_device import SUPPORTED
 from tests.test_server import call, fake_router_factory, live  # noqa: F401  (live is a fixture)
 
@@ -258,3 +258,32 @@ def test_a_test_of_a_chosen_band_locks_it_and_puts_the_lock_back(live, monkeypat
     assert writes[-2]["lte_info"]["freq_infos"]["freq_info"] == [{"band": "3"}]
     assert writes[-1]["lte_info"]["freq_infos"]["freq_info"] == [{"band": "7"}]
     assert events[-2]["type"] == "trace_done"
+
+
+def test_a_scan_probes_speed_by_default_and_the_results_carry_it(live, monkeypatch):
+    monkeypatch.setattr(server, "SLEEP", lambda seconds: None)
+    made = []
+    monkeypatch.setattr(server, "PROBE", lambda url: made.append(url) or FakeProbe(url))
+    session, port = live
+    connect(port, session)
+    call(port, "POST", "/api/scan", {"sides": ["lte"], "bands": ["7"]}, token=session.token)
+    events = drain(port, session)
+    run = next(event for event in events if event["type"] == "done")["run"]
+    assert made == ["http://192.168.8.1/"], "the probe is built for the connected router"
+    assert run["speed"]["bypass"] == "confirmed"
+    assert run["sides"]["lte"]["results"]["B7"]["speed"]["mbps"] == FakeProbe.READING["mbps"]
+
+
+def test_unticking_the_speed_test_builds_no_probe(live, monkeypatch):
+    monkeypatch.setattr(server, "SLEEP", lambda seconds: None)
+    monkeypatch.setattr(server, "PROBE", lambda url: pytest.fail("a probe was built with speed off"))
+    session, port = live
+    connect(port, session)
+    call(port, "POST", "/api/scan", {"sides": ["lte"], "bands": ["7"], "speed": False}, token=session.token)
+    events = drain(port, session)
+    run = next(event for event in events if event["type"] == "done")["run"]
+    assert "speed" not in run
+
+
+def test_the_cancel_grace_covers_a_band_that_is_being_probed():
+    assert server.SETTLE_GRACE >= scanner.PER_SET + speed.DURATION

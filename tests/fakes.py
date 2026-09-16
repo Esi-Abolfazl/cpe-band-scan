@@ -48,3 +48,24 @@ class Seq:
 
     def next(self):
         return self.values.pop(0) if len(self.values) > 1 else self.values[0]
+
+
+class FakeProbe:
+    """Stands in for speed.SpeedProbe: no sockets, a fixed verdict, one reading per band."""
+
+    READING = {"latency_ms": 80, "jitter_ms": 10, "mbps": 25.0, "bytes": 15_000_000, "seconds": 5.0}
+
+    def __init__(self, router_url="", bypass="confirmed", readings=None):
+        self.router_url = router_url
+        self.bypass = bypass
+        self.readings = list(readings or [])
+        self.started = 0
+        self.measured = 0
+
+    def start(self):
+        self.started += 1
+        return {"bypass": self.bypass, "lan_ip": "192.168.8.2", "public_ip": "5.1.1.1"}
+
+    def measure(self):
+        self.measured += 1
+        return self.readings.pop(0) if self.readings else dict(self.READING)

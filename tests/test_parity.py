@@ -147,3 +147,34 @@ def test_every_scope_option_label_comes_from_the_catalogue():
 def test_resume_restores_the_suggested_name():
     body = re.search(r"async function resume\(\)\s*\{(.*?)\n\}", APP_JS, re.S).group(1)
     assert "suggested_name" in body
+
+
+def test_the_page_and_the_terminal_put_the_speed_columns_in_the_same_place():
+    """Mirrors need a parity check: the two front ends each insert the same two keys at the
+    same index, and both only when the run carries speed."""
+    from cpe_band_scan import cli
+    keys = re.search(r"const SPEED_KEYS\s*=\s*\[(.*?)\]", APP_JS).group(1)
+    page_keys = [key.strip().strip('"') for key in keys.split(",")]
+    assert page_keys == list(cli.SPEED_KEYS)
+    page_at = int(re.search(r"const SPEED_AT\s*=\s*(\d+)", APP_JS).group(1))
+    assert page_at == cli.SPEED_AT
+    table = re.search(r"function resultsTable\(run\)\s*\{(.*?)\n\}", APP_JS, re.S).group(1)
+    assert "columnKeys(run)" in table and "run.speed" in table
+    assert "showsSpeed(run)" in table
+    assert 'bypass !== "blocked"' in APP_JS
+
+
+def test_the_scan_form_offers_the_speed_test_on_by_default_and_sends_the_choice():
+    assert re.search(r"speedTest:\s*true", APP_JS), "the speed test is on until unticked"
+    card = re.search(r"function scanCard\(\)\s*\{(.*?)\n\}", APP_JS, re.S).group(1)
+    assert 'toggle("speed_test"' in card
+    scan = re.search(r"async function onScan\([^)]*\)\s*\{(.*?)\n\}", APP_JS, re.S).group(1)
+    assert "speed: state.speedTest" in scan
+
+
+def test_the_verdict_is_said_under_the_table_and_in_the_log():
+    table = re.search(r"function resultsTable\(run\)\s*\{(.*?)\n\}", APP_JS, re.S).group(1)
+    assert 'copy.NOTES["probe_" + run.speed.bypass]' in table
+    describe = re.search(r"function describe\(event\)\s*\{(.*?)\n\}", APP_JS, re.S).group(1)
+    assert 'copy.NOTES["probe_" + event.speed.bypass]' in describe
+    assert "words.log_result_probe" in describe

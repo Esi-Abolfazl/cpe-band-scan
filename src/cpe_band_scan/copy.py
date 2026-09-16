@@ -78,6 +78,12 @@ FIELDS = {
         "placeholder": "",
         "help": "Keeps the newest line in view. Scrolling up pauses it.",
     },
+    "speed_test": {
+        "label": "Measure speed and ping on each band",
+        "placeholder": "",
+        "help": "Adds about 10 seconds and downloads up to 50 MB of mobile data per band. Goes around "
+                "your VPN, so the numbers are the band's, not the VPN's.",
+    },
 }
 
 ACTIONS = {
@@ -161,6 +167,10 @@ COLUMNS = {
                                        "are never recommended."},
     "carriers": {"label": "Carriers", "help": "The carriers the router combined on this band. More "
                                                "carriers usually means more speed."},
+    "speed": {"label": "Speed", "help": "Download in Mbit/s over 5 seconds, straight through the router. "
+                                         "One moment's reading: cell load changes it hour to hour."},
+    "ping": {"label": "Ping", "help": "Time to reach the internet in ms, the middle of 5 tries. Under 50 "
+                                       "feels instant, over 150 you notice."},
 }
 
 GRADES = {"excellent": "Excellent", "good": "Good", "fair": "Fair", "poor": "Poor",
@@ -188,6 +198,15 @@ ERRORS = {
 NOTES = {
     "before_scan": "Internet drops for about 30 seconds at every band. Expect 20 to 30 minutes.",
     "vpn": "A VPN is fine. Stay on one server for the whole scan.",
+    "probe_not_needed": "No VPN was active, so speed and ping are your plain connection.",
+    "probe_confirmed": "Speed and ping were measured straight through the router, past your VPN, so "
+                       "they are the band's own numbers.",
+    "probe_failed": "Your VPN couldn't be bypassed, so speed and ping include it. Compare rows with "
+                    "each other, not with other scans.",
+    "probe_blocked": "Your VPN blocks everything outside its tunnel, so speed and ping weren't measured. "
+                     "Allow local network access in the VPN's settings, or scan with the speed test "
+                     "unticked.",
+    "probe_no_answer": "no answer",
     "password_note": "Kept in memory only, unless you tick Remember.",
     "password_remembered": "The password is remembered on this computer.",
     "lock_survives": "The lock stays in place after a restart. Switch back to automatic whenever you want.",
@@ -234,9 +253,11 @@ PROGRESS = {
     "set_start": "Measuring {name}, {index} of {total}. About {minutes} min left.",
     "log_measuring": "Measuring {name}",
     "log_result": "{name}: {grade}, lowest {floor} dB",
+    "log_result_probe": "{name}: {grade}, lowest {floor} dB, {mbps} Mbit/s, {ping} ms",
     "log_skipped": "{name}: skipped",
     "log_refused": "{name}: refused",
     "set_result": "{name} scored {grade}, lowest quality {floor} dB.",
+    "set_result_probe": "{name} scored {grade}, lowest quality {floor} dB, {mbps} Mbit/s, {ping} ms ping.",
     "no_service": "{name} has no service here, so it was skipped.",
     "refused": "{name} was refused by the router, so it was skipped.",
     "side_done": "Finished the {side} bands: {count} measured.",

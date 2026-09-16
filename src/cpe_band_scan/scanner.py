@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from datetime import datetime
 
-from . import lockfreq, metrics
+from . import lockfreq, metrics, speed
 from .router import Router, RouterError
 
 SETTLE = 35                       # seconds a re-attach needs after a band change
@@ -26,7 +26,7 @@ def _sets_for(router: Router, side: str, bands=None) -> dict:
     return sets
 
 
-def _scan_side(router, side, sets, expect_5g, cancelled, sleep):
+def _scan_side(router, side, sets, expect_5g, cancelled, sleep, probe, per_set):
     other = OTHER[side]                        # the other side is on automatic during a measurement -
     keep = lockfreq.read_lock(router)           # scan() clears everything up front, so this read is it
 
@@ -38,14 +38,14 @@ def _scan_side(router, side, sets, expect_5g, cancelled, sleep):
 
     results, skipped = {}, {}
     total = len(sets)
-    yield {"type": "side_start", "side": side, "total": total, "eta_s": total * PER_SET}
+    yield {"type": "side_start", "side": side, "total": total, "eta_s": total * per_set}
     try:
         for index, (name, bands) in enumerate(sets.items(), 1):
             if cancelled():
                 yield {"type": "cancelled", "side": side}
                 break
             yield {"type": "set_start", "side": side, "name": name, "bands": bands,
-                   "index": index, "total": total, "eta_s": (total - index + 1) * PER_SET}
+                   "index": index, "total": total, "eta_s": (total - index + 1) * per_set}
             try:
                 set_side(bands)
             except RouterError as error:
@@ -60,6 +60,8 @@ def _scan_side(router, side, sets, expect_5g, cancelled, sleep):
                 yield {"type": "set_skipped", "side": side, "name": name, "reason": "no_service"}
                 continue
             measurement = metrics.measure(router, sleep=sleep)
+            if probe is not None and not cancelled():
+                measurement["speed"] = probe.measure()
             measurement["grade"] = metrics.grade(measurement, expect_5g or side == "nr")
             measurement["bands"] = bands
             results[name] = measurement
@@ -128,9 +130,11 @@ def choose(run: dict, original: dict) -> tuple[dict, str]:
     return plan, "applied" if chose else "kept_auto" if auto_won else "unchanged"
 
 
-def scan(router: Router, device, sides=("lte", "nr"), bands=None, cancelled=None, sleep=time.sleep):
+def scan(router: Router, device, sides=("lte", "nr"), bands=None, cancelled=None, sleep=time.sleep, probe=None):
     cancelled = cancelled or (lambda: False)
     original = lockfreq.read_lock(router)
+    report = probe.start() if probe is not None else None   # over the live link, before any lock change
+    per_set = PER_SET + (speed.DURATION if probe is not None else 0)
     if original["lte"][0] or original["nr"][0]:
         lockfreq.lock(router)          # a lock in place hides which bands are really on air,
         sleep(SETTLE)                  # including whether 5G is available here at all
@@ -139,16 +143,21 @@ def scan(router: Router, device, sides=("lte", "nr"), bands=None, cancelled=None
     run = {"kind": "scan", "started": _now(), "finished": "", "router_url": router.url,
            "device": device.as_dict(), "expect_5g": expect_5g, "baseline": baseline,
            "sides": {}, "applied": {"lte": [], "lte_scell": [], "nr": [], "nr_scell": []}}
+    if report is not None:
+        run["speed"] = report
     plan = {side: _sets_for(router, side, bands) for side in sides}
-    yield {"type": "run_start", "sides": list(sides), "expect_5g": expect_5g, "baseline": baseline,
-           "plan": {side: {"total": len(sets), "eta_s": len(sets) * PER_SET}
-                    for side, sets in plan.items()}}
+    start = {"type": "run_start", "sides": list(sides), "expect_5g": expect_5g, "baseline": baseline,
+             "plan": {side: {"total": len(sets), "eta_s": len(sets) * per_set}
+                      for side, sets in plan.items()}}
+    if report is not None:
+        start["speed"] = report
+    yield start
 
     settled = stopped = False     # settled: the lock is where the person should be left
     try:
         for side in sides:
             sets = plan[side]
-            for event in _scan_side(router, side, sets, expect_5g, cancelled, sleep):
+            for event in _scan_side(router, side, sets, expect_5g, cancelled, sleep, probe, per_set):
                 stopped = stopped or event["type"] == "cancelled"
                 yield event
                 if event["type"] == "side_done":

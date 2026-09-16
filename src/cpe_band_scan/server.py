@@ -18,7 +18,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
-from . import copy, lockfreq, metrics, scanner, store
+from . import copy, lockfreq, metrics, scanner, speed, store
 from .device import probe
 from .router import Router, RouterError, host
 
@@ -42,9 +42,11 @@ def finite(value):
 
 SLEEP = time.sleep    # real between-band and between-sample waits; read at call time so
                       # tests can swap in a no-op instead of waiting out real settle/gap delays
-SETTLE_GRACE = scanner.PER_SET + 5   # worst case: cancel lands just as a band's settle-and-
-                                     # measure window starts; give the job's finally block
-                                     # that long to clear the lock and restore automatic mode
+SETTLE_GRACE = scanner.PER_SET + speed.DURATION + 5   # worst case: cancel lands just as a band's
+                                     # settle-and-measure window starts, including the probe's own
+                                     # window; give the job's finally block that long to clear the
+                                     # lock and restore automatic mode
+PROBE = speed.SpeedProbe   # built per scan for the connected router; the demo swaps in a fake
 
 
 def _default_router(url, password, username="admin"):
@@ -255,8 +257,9 @@ class Handler(BaseHTTPRequestHandler):
                 if any(side not in scanner.SIDES for side in sides):
                     raise ValueError(f"sides {sides!r}")
                 bands = lockfreq.bands_of(body.get("bands") or []) or None
+                probe = PROBE(router.url) if body.get("speed", True) is not False else None
                 self.session.start("scan", lambda cancelled: scanner.scan(
-                    router, device, sides=sides, bands=bands, cancelled=cancelled, sleep=SLEEP))
+                    router, device, sides=sides, bands=bands, cancelled=cancelled, sleep=SLEEP, probe=probe))
                 return self._json({"started": True})
             if path == "/api/test":
                 router = self.session.require_router()

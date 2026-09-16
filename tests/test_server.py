@@ -8,7 +8,7 @@ from huawei_lte_api import exceptions as hx
 
 from cpe_band_scan import server
 from cpe_band_scan.router import Router
-from tests.fakes import FakeSession, Seq, factory
+from tests.fakes import FakeProbe, FakeSession, Seq, factory
 from tests.test_device import SUPPORTED
 
 
@@ -21,8 +21,11 @@ def fake_router_factory(data=None, connect_error=None):
 
 
 @pytest.fixture
-def live(request):
-    """A server on a free port, torn down after the test."""
+def live(request, monkeypatch):
+    """A server on a free port, torn down after the test. Defaults to a fake speed probe so a
+    scan test that doesn't care about speed never touches the real network; a test that does
+    care overrides `server.PROBE` itself."""
+    monkeypatch.setattr(server, "PROBE", lambda url: FakeProbe(url))
     session = server.Session(router_factory=getattr(request, "param", fake_router_factory()))
     httpd = server.build(port=0, session=session)
     thread = threading.Thread(target=httpd.serve_forever, daemon=True)

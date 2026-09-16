@@ -62,7 +62,7 @@ def test_every_error_ends_with_something_the_person_can_do():
 
 def test_error_placeholders_are_only_the_ones_callers_pass():
     allowed = {"url", "detail", "band", "bands", "name", "minutes", "count", "index",
-               "total", "grade", "floor", "side", "sets", "width", "what", "left"}
+               "total", "grade", "floor", "side", "sets", "width", "what", "left", "mbps", "ping"}
     for group in (copy.ERRORS, copy.NOTES, copy.PROGRESS):
         for key, message in group.items():
             fields = {name for _, name, _, _ in string.Formatter().parse(message) if name}
@@ -125,3 +125,27 @@ def test_there_is_one_scan_button_not_three():
 
 def test_bad_request_does_not_tell_a_terminal_user_to_reload_a_page():
     assert "page" not in copy.ERRORS["bad_request"].lower()
+
+
+VERDICTS = ("not_needed", "confirmed", "failed", "blocked")
+
+
+@pytest.mark.parametrize("verdict", VERDICTS)
+def test_every_bypass_verdict_has_a_sentence(verdict):
+    assert copy.NOTES[f"probe_{verdict}"].strip()
+
+
+def test_the_speed_checkbox_states_the_data_cost():
+    entry = copy.FIELDS["speed_test"]
+    assert "MB" in entry["help"], "spec R16: the data cost sits next to the checkbox"
+    assert "VPN" in entry["help"]
+
+
+def test_speed_and_ping_columns_exist_and_say_they_are_one_moment():
+    assert copy.COLUMNS["speed"]["label"] and copy.COLUMNS["ping"]["label"]
+    assert "moment" in copy.COLUMNS["speed"]["help"].lower()
+
+
+def test_the_probe_log_lines_carry_speed_and_ping():
+    for key in ("log_result_probe", "set_result_probe"):
+        assert "{mbps}" in copy.PROGRESS[key] and "{ping}" in copy.PROGRESS[key]

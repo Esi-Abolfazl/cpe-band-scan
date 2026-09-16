@@ -6,7 +6,7 @@ const state = {
   remember: false,
   // run: the last finished job of either kind. results: the last finished scan, what the tables and
   // the test's band picker read; a test never takes it off the screen.
-  scope: "all", testTarget: "current", testPick: { lte: "", nr: "" }, testMinutes: "2",
+  scope: "all", speedTest: true, testTarget: "current", testPick: { lte: "", nr: "" }, testMinutes: "2",
   events: [], since: 0, running: false, kind: "", busy: false, pollFailures: 0,
   applying: null,          // {side, name} while an Apply request is in flight
   editing: null,           // {id, name} while a profile row is being renamed
@@ -100,6 +100,13 @@ function choices(key, current, onPick, disabled) {
           el("input", { type: "radio", name: key, value, disabled,
                         checked: current === value ? "" : null, onchange: () => onPick(value) }),
           hint(option.label, option)))));
+}
+
+function toggle(key, checked, onChange, disabled) {
+  return el("label", { class: "choice" },
+    el("input", { type: "checkbox", id: key, disabled, checked: checked ? "" : null,
+                  onchange: (event) => onChange(event.target.checked) }),
+    help("FIELDS", key));
 }
 
 function action(key, handler, extra = {}) {
@@ -271,6 +278,7 @@ function scanCard() {
     el("p", { class: "note" }, copy.NOTES.before_scan),
     el("div", { class: "form-row" },
       choices("scan_scope", state.scope, (value) => { state.scope = value; }, disabled),
+      toggle("speed_test", state.speedTest, (on) => { state.speedTest = on; }, disabled),
       action("scan", () => onScan(SCOPES[state.scope]),
              { class: state.results ? "" : "primary", disabled })));
 }
@@ -290,11 +298,18 @@ function coloured(template, values, slot, node, tailClass) {
 function describe(event) {
   const words = copy.PROGRESS;
   switch (event.type) {
+    case "run_start":
+      return event.speed ? copy.NOTES["probe_" + event.speed.bypass] : null;
     case "set_start":                       // the bar already says "9 of 11 · about 3 min left"
       return fill(words.log_measuring, { name: event.name });
-    case "set_result":
-      return coloured(words.log_result, { name: event.name, floor: event.result.floor, grade: "{grade}" },
+    case "set_result": {
+      const speed = event.result.speed;
+      const answered = speed && !speed.error;
+      return coloured(answered ? words.log_result_probe : words.log_result,
+                      { name: event.name, floor: event.result.floor, grade: "{grade}",
+                        mbps: answered ? speed.mbps : "", ping: answered ? speed.latency_ms : "" },
                       "grade", el("span", { class: `grade-${event.result.grade}` }, copy.GRADES[event.result.grade]));
+    }
     case "set_skipped":
       return coloured(event.reason === "refused" ? words.log_refused : words.log_skipped, { name: event.name },
                       null, null, "bad-text");
@@ -467,7 +482,7 @@ async function onScan(sides) {
   state.events = []; state.since = 0; state.run = null; state.pollFailures = 0;
   state.applyFailed = null;
   try {
-    await api("POST", "/api/scan", { sides });
+    await api("POST", "/api/scan", { sides, speed: state.speedTest });
     state.running = true;
     state.kind = "scan";
     state.live = buildScanLive(sides);
@@ -513,6 +528,26 @@ async function poll() {
 // ---- results ---------------------------------------------------------------
 const COLUMN_KEYS = ["rank", "band", "grade", "five_g", "floor", "sinr", "rsrq", "rsrp",
                      "nr_sinr", "carriers"];
+const SPEED_KEYS = ["speed", "ping"];
+const SPEED_AT = 4;            // after the 5G column; cli.py holds the same two values
+
+// a blocked probe measured no band: its sentence is still said, but no columns are added
+function showsSpeed(run) {
+  return Boolean(run.speed) && run.speed.bypass !== "blocked";
+}
+
+function columnKeys(run) {
+  const keys = COLUMN_KEYS.slice();
+  if (showsSpeed(run)) keys.splice(SPEED_AT, 0, ...SPEED_KEYS);
+  return keys;
+}
+
+function speedCells(row) {
+  const probe = row.speed;
+  const answered = probe && !probe.error;
+  return SPEED_KEYS.map((key) => el("td", { class: "num" },
+    answered ? num(key === "speed" ? probe.mbps : probe.latency_ms) : copy.NOTES.probe_no_answer));
+}
 
 function inUse(side, record, name) {
   const lock = state.status && state.status.lock[side];
@@ -533,17 +568,18 @@ function applyCell(side, record, name) {
 function resultsTable(run) {
   if (!run || !run.sides) return el("p", { class: "note" }, copy.NOTES.empty_results);
   const blocks = [];
+  const [firstSide] = Object.keys(run.sides);
   for (const [side, record] of Object.entries(run.sides)) {
     const ranked = record.order.concat(
       Object.keys(record.results).filter((name) => !record.order.includes(name)));
     const head = el("tr", {},
-      COLUMN_KEYS.map((key) => el("th", { scope: "col" }, help("COLUMNS", key))),
+      columnKeys(run).map((key) => el("th", { scope: "col" }, help("COLUMNS", key))),
       el("th", { scope: "col" }));
     const rows = ranked.map((name, index) => {
       const row = record.results[name];
       const isBest = index === 0 && record.order.includes(name);
       const used = inUse(side, record, name);
-      return el("tr", { class: [isBest ? "best" : "", used ? "used" : ""].join(" ").trim() },
+      const cells = [
         el("td", { class: "num" }, record.order.includes(name) ? index + 1 : "—"),
         el("td", { class: "band" }, el("b", {}, name), isBest ? el("span", { class: "badge best" }, copy.NOTES.best) : null),
         el("td", { class: `grade-${row.grade}` }, copy.GRADES[row.grade]),
@@ -554,7 +590,10 @@ function resultsTable(run) {
         el("td", { class: "num" }, num(row.rsrp)),
         el("td", { class: "num" }, num(row.nrsinr)),
         el("td", { class: "carriers" }, (row.carriers || []).map((carrier) => carrier.band).join(" + ") || row.band),
-        applyCell(side, record, name));
+      ];
+      if (showsSpeed(run)) cells.splice(SPEED_AT, 0, ...speedCells(row));
+      return el("tr", { class: [isBest ? "best" : "", used ? "used" : ""].join(" ").trim() },
+        cells, applyCell(side, record, name));
     });
     const skipped = Object.keys(record.skipped);
     blocks.push(el("div", { class: "card span" },
@@ -563,7 +602,8 @@ function resultsTable(run) {
       skipped.length
         ? el("p", { class: "note" }, `${skipped.join(", ")}: ` + copy.PROGRESS.no_service.replace("{name}", "").trim())
         : null,
-      el("p", { class: "note" }, copy.NOTES.auto_row)));
+      el("p", { class: "note" }, copy.NOTES.auto_row),
+      run.speed && side === firstSide ? el("p", { class: "note" }, copy.NOTES["probe_" + run.speed.bypass]) : null));
   }
   return blocks;
 }
