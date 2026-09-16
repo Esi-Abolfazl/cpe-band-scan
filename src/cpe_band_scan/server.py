@@ -19,11 +19,11 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
 from . import copy, lockfreq, metrics, scanner, speed, store
+from .config import DEFAULT_URL
 from .device import probe
 from .router import Router, RouterError, host
 
 WEB = Path(__file__).parent / "web"
-DEFAULT_URL = "http://192.168.8.1/"
 ALLOWED_HOSTS = ("127.0.0.1", "localhost")
 TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
          ".css": "text/css; charset=utf-8"}

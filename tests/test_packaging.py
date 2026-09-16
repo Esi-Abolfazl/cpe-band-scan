@@ -58,3 +58,7 @@ def test_the_readme_never_promises_a_package_that_is_not_published():
 def test_the_launchers_name_the_python_floor_when_install_fails():
     for name in ("Run on Mac.command", "Run on Windows.bat"):
         assert "Python 3.10 or newer" in (ROOT / name).read_text(encoding="utf-8"), name
+
+
+def test_the_package_init_re_exports_nothing():
+    assert (ROOT / "src" / "cpe_band_scan" / "__init__.py").read_text(encoding="utf-8").strip() == ""
