@@ -7,7 +7,7 @@ import pytest
 from cpe_band_scan import copy
 
 WEB = Path(__file__).resolve().parents[1] / "src" / "cpe_band_scan" / "web"
-APP_JS = (WEB / "app.js").read_text(encoding="utf-8")
+APP_JS = "\n".join(p.read_text(encoding="utf-8") for p in sorted(WEB.glob("*.js")))
 INDEX = (WEB / "index.html").read_text(encoding="utf-8")
 # The <title> holds the app's own name (copy.APP, not a FIELDS/ACTIONS/COLUMNS label) and
 # legitimately shares words with them (COLUMNS.band's "Band" vs. "CPE Band Scan") - only the

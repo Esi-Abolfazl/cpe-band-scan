@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "src" / "cpe_band_scan" / "web"
 CSS = (WEB / "style.css").read_text(encoding="utf-8")
-JS = (WEB / "app.js").read_text(encoding="utf-8")
+JS = "\n".join(p.read_text(encoding="utf-8") for p in sorted(WEB.glob("*.js")))
 HTML = (WEB / "index.html").read_text(encoding="utf-8")
 
 

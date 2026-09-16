@@ -1,3 +1,9 @@
+---
+status: done
+run-with: the session that executed it, 2026-09-16
+origin: docs/design/2026-09-16-cpe-band-scan-spec.md
+---
+
 # CPE Band Scan Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -59,8 +65,8 @@
 - [ ] **Step 1: Create the repo skeleton**
 
 ```bash
-mkdir -p /Users/esi/Work/Other/cpe-band-scan/src/cpe_band_scan/web /Users/esi/Work/Other/cpe-band-scan/tests
-cd /Users/esi/Work/Other/cpe-band-scan && git init && touch src/cpe_band_scan/__init__.py tests/__init__.py
+mkdir -p $PWD/src/cpe_band_scan/web $PWD/tests
+git init && touch src/cpe_band_scan/__init__.py tests/__init__.py
 printf '__pycache__/\n*.pyc\n.venv/\n.pytest_cache/\n' > .gitignore
 ```
 
@@ -220,7 +226,7 @@ def test_post_reaches_the_session():
 - [ ] **Step 4: Run the tests and watch them fail**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && python3 -m venv .venv && .venv/bin/pip install -e ".[dev]" && .venv/bin/pytest -q
+python3 -m venv .venv && .venv/bin/pip install -e ".[dev]" && .venv/bin/pytest -q
 ```
 Expected: `ModuleNotFoundError: No module named 'cpe_band_scan.router'`.
 
@@ -299,14 +305,14 @@ class Router:
 - [ ] **Step 6: Run the tests and watch them pass**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest -q
+.venv/bin/pytest -q
 ```
 Expected: 13 passed.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A && git commit -m "feat: router session with explainable failures"
+git add -A && git commit -m "feat: router session with explainable failures"
 ```
 
 ---
@@ -390,7 +396,7 @@ def test_as_dict_is_json_safe():
 - [ ] **Step 2: Run them and watch them fail**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest tests/test_device.py -q
+.venv/bin/pytest tests/test_device.py -q
 ```
 Expected: `ModuleNotFoundError: No module named 'cpe_band_scan.device'`.
 
@@ -452,14 +458,14 @@ def probe(router: Router) -> Device:
 - [ ] **Step 4: Run the tests and watch them pass**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest -q
+.venv/bin/pytest -q
 ```
 Expected: all passed.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A && git commit -m "feat: probe firmware, driver and carrier before any write"
+git add -A && git commit -m "feat: probe firmware, driver and carrier before any write"
 ```
 
 ---
@@ -547,7 +553,7 @@ def test_read_lock_accepts_a_single_freq_info_that_is_not_a_list():
 - [ ] **Step 2: Run them and watch them fail**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest tests/test_lockfreq.py -q
+.venv/bin/pytest tests/test_lockfreq.py -q
 ```
 Expected: `ModuleNotFoundError: No module named 'cpe_band_scan.lockfreq'`.
 
@@ -600,14 +606,14 @@ def read_lock(router: Router) -> dict:
 - [ ] **Step 4: Run the tests and watch them pass**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest -q
+.venv/bin/pytest -q
 ```
 Expected: all passed.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A && git commit -m "feat: read and write the lock-freq band lock"
+git add -A && git commit -m "feat: read and write the lock-freq band lock"
 ```
 
 ---
@@ -758,7 +764,7 @@ def test_visible_bands_never_raise():
 - [ ] **Step 3: Run them and watch them fail**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest tests/test_metrics.py -q
+.venv/bin/pytest tests/test_metrics.py -q
 ```
 Expected: `ModuleNotFoundError: No module named 'cpe_band_scan.metrics'`.
 
@@ -856,14 +862,14 @@ def visible_bands(router: Router) -> dict:
 - [ ] **Step 5: Run the tests and watch them pass**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest -q
+.venv/bin/pytest -q
 ```
 Expected: all passed.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A && git commit -m "feat: measure, grade and rank bands"
+git add -A && git commit -m "feat: measure, grade and rank bands"
 ```
 
 ---
@@ -1029,7 +1035,7 @@ def test_trace_yields_one_sample_per_step_and_a_summary():
 - [ ] **Step 2: Run them and watch them fail**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest tests/test_scanner.py -q
+.venv/bin/pytest tests/test_scanner.py -q
 ```
 Expected: `ModuleNotFoundError: No module named 'cpe_band_scan.scanner'`.
 
@@ -1174,14 +1180,14 @@ def trace(router: Router, seconds: int = 120, gap: int = 10, cancelled=None, sle
 - [ ] **Step 4: Run the tests and watch them pass**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest -q
+.venv/bin/pytest -q
 ```
 Expected: all passed. If `test_the_winner_is_applied_with_the_runners_up_as_secondaries` fails, check the operator precedence in the `if plan["lte"] or plan["nr"] and not cancelled():` line and write it as `if (plan["lte"] or plan["nr"]) and not cancelled():`.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A && git commit -m "feat: scan and trace as an event stream"
+git add -A && git commit -m "feat: scan and trace as an event stream"
 ```
 
 ---
@@ -1294,7 +1300,7 @@ def test_a_corrupt_file_is_skipped_not_crashed_on(home):
 - [ ] **Step 2: Run them and watch them fail**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest tests/test_store.py -q
+.venv/bin/pytest tests/test_store.py -q
 ```
 Expected: `ModuleNotFoundError: No module named 'cpe_band_scan.store'`.
 
@@ -1396,14 +1402,14 @@ def delete(run_id: str) -> None:
 - [ ] **Step 4: Run the tests and watch them pass**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest -q
+.venv/bin/pytest -q
 ```
 Expected: all passed.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A && git commit -m "feat: save, list and reopen named runs"
+git add -A && git commit -m "feat: save, list and reopen named runs"
 ```
 
 ---
@@ -1524,7 +1530,7 @@ def test_every_grade_has_a_label(grade):
 - [ ] **Step 2: Run them and watch them fail**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest tests/test_copy.py -q
+.venv/bin/pytest tests/test_copy.py -q
 ```
 Expected: `ModuleNotFoundError: No module named 'cpe_band_scan.copy'`.
 
@@ -1747,14 +1753,14 @@ def bundle() -> dict:
 - [ ] **Step 4: Run the tests and watch them pass**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest -q
+.venv/bin/pytest -q
 ```
 Expected: all passed. `test_error_placeholders_are_only_the_ones_callers_pass` will point at any placeholder you invented; either use an allowed one or add it to the allowed set in the test and to the caller.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A && git commit -m "feat: one catalogue for every user-facing string"
+git add -A && git commit -m "feat: one catalogue for every user-facing string"
 ```
 
 ---
@@ -1840,7 +1846,7 @@ def test_a_router_error_prints_the_sentence_not_a_traceback(capsys, monkeypatch)
 - [ ] **Step 2: Run them and watch them fail**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest tests/test_cli.py -q
+.venv/bin/pytest tests/test_cli.py -q
 ```
 Expected: `ModuleNotFoundError: No module named 'cpe_band_scan.cli'`.
 
@@ -2066,14 +2072,14 @@ raise SystemExit(main())
 - [ ] **Step 4: Run the tests and watch them pass**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest -q
+.venv/bin/pytest -q
 ```
 Expected: all passed.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A && git commit -m "feat: command line front end"
+git add -A && git commit -m "feat: command line front end"
 ```
 
 ---
@@ -2234,7 +2240,7 @@ Add `"device/signal"` to `tests/test_device.py::SUPPORTED` so the status call ha
 - [ ] **Step 3: Run them and watch them fail**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest tests/test_server.py -q
+.venv/bin/pytest tests/test_server.py -q
 ```
 Expected: `ModuleNotFoundError: No module named 'cpe_band_scan.server'`.
 
@@ -2466,14 +2472,14 @@ def serve(port=8765, open_browser=True, session=None) -> int:
 - [ ] **Step 6: Run the tests and watch them pass**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest -q
+.venv/bin/pytest -q
 ```
 Expected: all passed. `test_the_page_carries_the_token_and_the_copy` also proves the copy bundle reaches the browser.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A && git commit -m "feat: local server with a token-guarded API"
+git add -A && git commit -m "feat: local server with a token-guarded API"
 ```
 
 ---
@@ -2603,7 +2609,7 @@ def test_a_two_minute_test_runs_as_a_job(live, monkeypatch):
 - [ ] **Step 2: Run them and watch them fail**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest tests/test_server_jobs.py -q
+.venv/bin/pytest tests/test_server_jobs.py -q
 ```
 Expected: failures on `POST /api/scan` returning 404.
 
@@ -2687,14 +2693,14 @@ In `do_POST`, inside the `try`, after the `/api/connect` branch:
 - [ ] **Step 5: Run the tests and watch them pass**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest -q
+.venv/bin/pytest -q
 ```
 Expected: all passed. If `test_a_scan_streams_events_and_finishes` times out, check that `scanner.SETTLE` is read at call time rather than captured at import.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A && git commit -m "feat: run scans as background jobs the page can follow"
+git add -A && git commit -m "feat: run scans as background jobs the page can follow"
 ```
 
 ---
@@ -2780,7 +2786,7 @@ def test_a_run_id_that_walks_the_filesystem_is_refused(live):
 - [ ] **Step 2: Run them and watch them fail**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest tests/test_server_runs.py -q
+.venv/bin/pytest tests/test_server_runs.py -q
 ```
 Expected: 404s where 200s are wanted.
 
@@ -2836,14 +2842,14 @@ from urllib.parse import parse_qs, unquote, urlparse
 - [ ] **Step 4: Run the tests and watch them pass**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest -q
+.venv/bin/pytest -q
 ```
 Expected: all passed.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A && git commit -m "feat: save, reopen, rename and delete runs from the page"
+git add -A && git commit -m "feat: save, reopen, rename and delete runs from the page"
 ```
 
 ---
@@ -3179,7 +3185,7 @@ server.serve(port=8766, session=session)
 - [ ] **Step 5: Look at it**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/python tools/demo_server.py
+.venv/bin/python tools/demo_server.py
 ```
 Check by hand, then stop it with Ctrl-C:
 - the connect screen shows both fields with a `?` beside each, and the VPN note;
@@ -3190,7 +3196,7 @@ Check by hand, then stop it with Ctrl-C:
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A && git commit -m "feat: connect screen, status card and the ? help system"
+git add -A && git commit -m "feat: connect screen, status card and the ? help system"
 ```
 
 ---
@@ -3385,7 +3391,7 @@ function renderMain() {
 - [ ] **Step 4: Look at it**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/python tools/demo_server.py
+.venv/bin/python tools/demo_server.py
 ```
 Start a scan in the demo and check:
 - the progress line names the band, its position and the minutes left, and updates every couple of seconds;
@@ -3398,7 +3404,7 @@ Start a scan in the demo and check:
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A && git commit -m "feat: scan progress and a ranked, applyable results table"
+git add -A && git commit -m "feat: scan progress and a ranked, applyable results table"
 ```
 
 ---
@@ -3556,7 +3562,7 @@ function renderMain() {
 - [ ] **Step 3: Look at it**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && CPE_BAND_SCAN_HOME=/tmp/cpe-band-scan-demo .venv/bin/python tools/demo_server.py
+CPE_BAND_SCAN_HOME=/tmp/cpe-band-scan-demo .venv/bin/python tools/demo_server.py
 ```
 Check:
 - the test runs for its full length, shows a line per sample, and ends with the floor/typical/peak table;
@@ -3567,7 +3573,7 @@ Check:
 - [ ] **Step 4: Commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A && git commit -m "feat: 2-minute test, named saves and the saved-results browser"
+git add -A && git commit -m "feat: 2-minute test, named saves and the saved-results browser"
 ```
 
 ---
@@ -3628,7 +3634,7 @@ def test_a_corrupt_settings_file_is_ignored(home):
 - [ ] **Step 2: Run them and watch them fail**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest tests/test_settings.py -q
+.venv/bin/pytest tests/test_settings.py -q
 ```
 Expected: `AttributeError: module 'cpe_band_scan.store' has no attribute 'settings'`.
 
@@ -3676,14 +3682,14 @@ In `Handler._page`, serve the remembered address as the field's default:
 - [ ] **Step 5: Run the tests and watch them pass**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest -q
+.venv/bin/pytest -q
 ```
 Expected: all passed.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A && git commit -m "feat: remember the router address, never the password"
+git add -A && git commit -m "feat: remember the router address, never the password"
 ```
 
 ---
@@ -3756,7 +3762,7 @@ def test_the_bootstrap_placeholder_is_still_there():
 - [ ] **Step 2: Run them and fix what they find**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest tests/test_parity.py -q
+.venv/bin/pytest tests/test_parity.py -q
 ```
 If a field, action or column has no `?` on the page, add the `?` rather than deleting the entry. If an entry genuinely has no place in the page (a CLI-only string), move it out of `FIELDS`/`ACTIONS`/`COLUMNS` into `PROGRESS` or `NOTES`.
 
@@ -3821,14 +3827,14 @@ def test_the_whole_journey(live):
 - [ ] **Step 4: Run the whole suite**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest -q
+.venv/bin/pytest -q
 ```
 Expected: all passed.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A && git commit -m "test: page and copy stay in step, and one full journey"
+git add -A && git commit -m "test: page and copy stay in step, and one full journey"
 ```
 
 ---
@@ -3875,7 +3881,7 @@ def test_the_readme_tells_someone_how_to_start_without_an_llm():
 - [ ] **Step 2: Run it and watch it fail**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest tests/test_packaging.py -q
+.venv/bin/pytest tests/test_packaging.py -q
 ```
 Expected: `KeyError: 'cpescan'`.
 
@@ -3983,14 +3989,14 @@ pause
 - [ ] **Step 6: Verify a real install works**
 
 ```bash
-cd /tmp && rm -rf cpe-band-scan-check && python3 -m venv cpe-band-scan-check && cpe-band-scan-check/bin/pip install /Users/esi/Work/Other/cpe-band-scan && cpe-band-scan-check/bin/cpe-band-scan help
+cd /tmp && rm -rf cpe-band-scan-check && python3 -m venv cpe-band-scan-check && cpe-band-scan-check/bin/pip install $PWD && cpe-band-scan-check/bin/cpe-band-scan help
 ```
 Expected: the command table prints. Then run `cpe-band-scan-check/bin/cpe-band-scan ui --no-browser`, open the address it prints, and stop it with Ctrl-C.
 
 - [ ] **Step 7: Run the suite, then commit**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest -q && git add -A && git commit -m "feat: install path, launchers and the README"
+.venv/bin/pytest -q && git add -A && git commit -m "feat: install path, launchers and the README"
 ```
 
 ---
@@ -4000,7 +4006,7 @@ cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/pytest -q && git add -A && g
 **Files:**
 - Create: `skills/bandscan/SKILL.md`, `skills/bandscan/reference.md` (moved from the personal skills repo, rewritten to call the app)
 - Modify: `README.md` (a section pointing at the bundled skill)
-- Remove: `/Users/esi/Work/Other/skills/skills/bandscan/` and its row in that repo's `README.md`
+- Remove: `$SIBLING_SKILLS_REPO/skills/bandscan/` and its row in that repo's `README.md`
 
 **Why the skill travels with the app:** anyone who installs CPE Band Scan can then point their
 assistant at the same repository and get the judgement layer for free — locating the router,
@@ -4014,8 +4020,8 @@ name belongs to the app, which people type once per session at most.
 - [ ] **Step 1: Move the skill in, without deleting anything yet**
 
 ```bash
-mkdir -p /Users/esi/Work/Other/cpe-band-scan/skills/bandscan
-cp /Users/esi/Work/Other/skills/skills/bandscan/SKILL.md /Users/esi/Work/Other/skills/skills/bandscan/reference.md /Users/esi/Work/Other/cpe-band-scan/skills/bandscan/
+mkdir -p $PWD/skills/bandscan
+cp $SIBLING_SKILLS_REPO/skills/bandscan/SKILL.md $SIBLING_SKILLS_REPO/skills/bandscan/reference.md $PWD/skills/bandscan/
 ```
 
 The `scripts/` folder is deliberately not copied: the installed app replaces it.
@@ -4035,7 +4041,7 @@ Step 4 becomes:
 - [ ] **Step 3: Repoint every invocation in the moved `SKILL.md`**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan/skills/bandscan && sed -i '' -E 's#python3? (<skill>/scripts/)?bandscan\.py #cpe-band-scan #g' SKILL.md
+cd $PWD/skills/bandscan && sed -i '' -E 's#python3? (<skill>/scripts/)?bandscan\.py #cpe-band-scan #g' SKILL.md
 ```
 
 Then read the file and repair what the substitution left behind:
@@ -4057,7 +4063,7 @@ there and a new row here.
 - [ ] **Step 5: Check nothing still refers to the deleted scripts**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan/skills/bandscan && grep -n "bandscan\.py\|hw\.py\|scripts/" SKILL.md reference.md
+cd $PWD/skills/bandscan && grep -n "bandscan\.py\|hw\.py\|scripts/" SKILL.md reference.md
 ```
 Expected: no matches.
 
@@ -4080,8 +4086,8 @@ ln -s "$PWD/skills/bandscan" ~/.claude/skills/bandscan
 Repoint first, so the symlinks are never left dangling:
 
 ```bash
-ln -sfn /Users/esi/Work/Other/cpe-band-scan/skills/bandscan ~/.claude/skills/bandscan
-ln -sfn /Users/esi/Work/Other/cpe-band-scan/skills/bandscan ~/.agents/skills/bandscan
+ln -sfn $PWD/skills/bandscan ~/.claude/skills/bandscan
+ln -sfn $PWD/skills/bandscan ~/.agents/skills/bandscan
 ls -l ~/.claude/skills/bandscan ~/.agents/skills/bandscan
 ```
 
@@ -4089,26 +4095,26 @@ Confirm the moved copy is complete, then drop the original. It was never committ
 this repository is the only version that matters:
 
 ```bash
-diff -r /Users/esi/Work/Other/skills/skills/bandscan /Users/esi/Work/Other/cpe-band-scan/skills/bandscan
+diff -r $SIBLING_SKILLS_REPO/skills/bandscan $PWD/skills/bandscan
 ```
 Expected: only the absent `scripts/` folder differs. Then:
 
 ```bash
-rm -rf /Users/esi/Work/Other/skills/skills/bandscan
-cd /Users/esi/Work/Other/skills && git checkout -- README.md
+rm -rf $SIBLING_SKILLS_REPO/skills/bandscan
+cd $SIBLING_SKILLS_REPO && git checkout -- README.md
 ```
 
 - [ ] **Step 8: Prove the skill still points at something that exists**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && .venv/bin/cpe-band-scan help && grep -c "cpe-band-scan" skills/bandscan/SKILL.md
+.venv/bin/cpe-band-scan help && grep -c "cpe-band-scan" skills/bandscan/SKILL.md
 ```
 Expected: the command table prints, and the skill names the app several times.
 
 - [ ] **Step 9: Save the work**
 
 ```bash
-cd /Users/esi/Work/Other/cpe-band-scan && git add -A
+git add -A
 ```
 Then commit with the message `feat: ship the assistant skill with the app`.
 
