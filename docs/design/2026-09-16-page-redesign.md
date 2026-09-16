@@ -152,3 +152,16 @@ branch must pass, not a preference.
 `window.prompt`, `confirm` and `alert` never appear. Embedded browsers block them and they look
 nothing like the page. Rename edits in the row; a destructive action needs a second press whose label
 says so (Delete → Delete now). Guarded by `test_the_page_never_opens_a_browser_dialog`.
+
+## Ruling 2026-09-16, later: speed is shown, never ranked
+
+The scan form gains one native checkbox, **Measure speed and ping on each band**, ticked by default,
+in the same row as the scope radios; its hover text states the data cost. The results table gains
+**Speed** and **Ping** right after the 5G column, only when the run carries them, and one sentence under
+the table says how the VPN was handled (`copy.NOTES.probe_*`). The two columns never enter the
+ranking: cell load moves hour to hour, and a ranking that flips between scans is worse than one that
+ignores speed. The page and the terminal share the column position through `SPEED_KEYS`/`SPEED_AT`,
+guarded by `test_the_page_and_the_terminal_put_the_speed_columns_in_the_same_place`.
+
+Follow-up: once saved runs show how stable per-band speed is across hours, decide whether it may break
+ties inside a rating. Not before.

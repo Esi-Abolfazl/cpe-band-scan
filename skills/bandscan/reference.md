@@ -47,6 +47,8 @@ and `device/seccellinfo` (visible cells, restricted by an active lock), `config/
 - RSRQ worse than -14 dB on a strong RSRP means interference or load, not distance.
 - In NSA, n78 rides on the LTE anchor: fix the anchor, the 5G leg follows.
 - A single band lock disables carrier aggregation across bands; `--scell` keeps them as secondaries.
+- Speed (Mbit/s) and Ping (ms) are the path from this computer through the router to `speed.cloudflare.com` at that moment: width, cell load and core path in one number. They change with the hour; the radio numbers do not, which is why they never rank.
+- The probe bypasses a VPN by scoping sockets to the LAN interface (`IP_BOUND_IF` / `SO_BINDTODEVICE` / `IP_UNICAST_IF`) and resolving the host through the router. Fake-IP VPNs (198.18.0.0/15 answers) make the DNS step mandatory: a scoped connect to a system-resolved name just times out (seen 2026-09-16).
 
 ## Findings from the first field run (MCI, Tehran, 2026-09-14, H155-381)
 

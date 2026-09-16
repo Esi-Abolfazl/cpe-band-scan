@@ -76,6 +76,12 @@ The scan locks each band in turn, waits for the router to re-attach, measures fo
 then moves on. Your connection drops for about half a minute at every change. You can keep working
 between the drops.
 
+**Measure speed and ping on each band** is ticked by default. After the radio samples of each band the
+app pings the internet five times and downloads for five seconds through the router, from this computer,
+and adds two columns to the results. It costs about 10 seconds and up to 50 MB per band, so a full
+scan of every band can use up to about 1.4 GB on a fast link; slow links use far less because the
+window closes at five seconds. Untick it on a metered plan you are close to using up.
+
 While it runs you see both networks at once: a bar and a time left for each, so "4G: 2 of 8, about
 6 min left" sits next to "5G: waiting" and you know what is coming. The 4G and 5G logs sit side by
 side. Each follows its newest line until you scroll up to read; tick **Follow** to catch up again.
@@ -94,6 +100,8 @@ One table per network, best first. Columns:
 | Band | the band that was locked. **Best** marks the top of the ranking |
 | Rating | Excellent, Good, Fair, Poor, or No 5G |
 | 5G | whether the 5G carrier stayed up on this band. Bands that lose it are never recommended |
+| Speed | download in Mbit/s over five seconds, straight through the router. One moment's reading: cell load changes it hour to hour. Shown, never used to rank |
+| Ping | time to reach the internet in ms, the middle of five tries. Under 50 feels instant, over 150 you notice |
 | Lowest | the lowest SINR seen, in dB. This is what makes a call or a stream stutter. Above 0 is usable, above 5 is comfortable |
 | Typical | the middle SINR reading, in dB |
 | Channel | RSRQ in dB. Better than -12 is healthy |
@@ -104,6 +112,11 @@ One table per network, best first. Columns:
 When the scan ends, the app locks the best band itself, with the other working bands as secondary
 carriers so carrier aggregation survives. If automatic held up better than any single band, or no
 band beat what you already had, it says so and changes nothing.
+
+Speed and ping never move a band up or down the ranking. The rating is the radio; the two columns are
+what that radio delivered at that moment. Under each table one sentence says what they mean: measured
+past your VPN, measured through it, measured with no VPN active, or not measured because the VPN blocked
+it.
 
 To lock a different row, press its **Apply**. Apply on the auto row puts that side back on automatic. Every Apply button waits while the router takes the
 lock, then the row the router actually reports shows **In use**. Best and In use are two different
@@ -132,10 +145,25 @@ second press. Profiles live on this computer, so they follow you when you move t
 
 ### Using a VPN
 
-Keep it on. The numbers come from the router itself, so a VPN doesn't change them. Stay on one
+Keep it on. The signal numbers come from the router itself, so a VPN doesn't change them. Stay on one
 server for the whole scan, because switching servers mid-run changes what you feel while the
-measurements stay the same. If the app can't reach the router while the VPN is up, turn on your
-VPN's local network access setting.
+measurements stay the same.
+
+The speed and ping probe is different: measured through the VPN, every band would look like the VPN
+server. So the probe goes around it. Each probe connection is pinned to the network interface that
+reaches the router, and the probe host's address is looked up through the router too, because some
+VPNs answer every name lookup with an address only the tunnel can route. Before the first band the app
+checks that the address the internet sees through the router differs from the one it sees through the
+VPN, and tells you which of these you are in:
+
+- no VPN was active: the numbers are your plain connection;
+- measured straight through the router, past your VPN: the numbers are the band's own;
+- the VPN couldn't be bypassed: the numbers include it, so compare rows with each other only;
+- the VPN blocks everything outside its tunnel: speed and ping weren't measured. Allow local network
+  access in the VPN's settings, or scan with the speed test unticked.
+
+If the app can't reach the router at all while the VPN is up, turn on your VPN's local network access
+setting.
 
 ## From the terminal instead
 
@@ -148,6 +176,7 @@ cpe-band-scan scan 4g                # 4G bands only
 cpe-band-scan scan 5g                # 5G bands only
 cpe-band-scan scan 7 40              # only B7 and B40, each measured on its own
 cpe-band-scan scan --save "Office"   # save the finished run under a name
+cpe-band-scan scan --no-speed        # skip the per-band speed and ping probe
 cpe-band-scan test                   # watch the current lock for 2 minutes
 cpe-band-scan apply 7                # lock 4G to B7
 cpe-band-scan apply 7 --scell 3,40   # lock to B7, keep B3 and B40 as secondary carriers
@@ -215,5 +244,9 @@ ln -s "$PWD/skills/bandscan" ~/.claude/skills/bandscan
   provider.
 - **The results table is the last finished scan.** After a test and a page reload it is gone until
   the next scan. Terminal scans are saved under `runs` and can be reopened with `show`.
+- **The speed test costs data and reads one moment.** Up to 50 MB per band, so a full scan of every band can use
+  up to about 1.4 GB on a fast link; slow links use far less because the window closes at five
+  seconds. Cell load changes hour to hour. It is shown next to the rating and never decides it.
+  Untick **Measure speed and ping on each band** on a plan you are close to using up.
 - **A remembered password is a file.** It is readable only by your user account, but anyone who can
   sign in as you can read it. Use Forget the password when the computer is shared.
