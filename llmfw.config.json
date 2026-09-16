@@ -1,0 +1,133 @@
+{
+  "$comment": "Config for scripts/check-repo.mjs. Every exemption here is one row in docs/adoption-scorecard.md; remove it in the change that retires the row.",
+  "ignoreDirs": [
+    "node_modules",
+    ".git",
+    ".venv",
+    ".pytest_cache",
+    "__pycache__",
+    ".superpowers",
+    "*.egg-info"
+  ],
+  "generatedPaths": [],
+  "agents": {
+    "file": "AGENTS.md",
+    "vendorFiles": [
+      "CLAUDE.md"
+    ],
+    "vendorImportLine": "@AGENTS.md"
+  },
+  "docs": {
+    "dir": "docs",
+    "conventionsDir": "docs/conventions",
+    "constitution": "docs/CONSTITUTION.md",
+    "adrDir": "docs/adr",
+    "adrMaxLines": 45,
+    "debtLedger": "docs/tech-debts.md",
+    "linkExempt": []
+  },
+  "source": {
+    "extensions": [
+      ".py",
+      ".js",
+      ".css",
+      ".html",
+      ".mjs",
+      ".yml",
+      ".yaml"
+    ],
+    "exempt": [],
+    "fileSize": {
+      "maxLines": 300,
+      "exempt": [
+        "src/cpe_band_scan/server.py",
+        "src/cpe_band_scan/web/app.js",
+        "tests/test_scanner.py",
+        "scripts/check-repo.mjs"
+      ]
+    }
+  },
+  "forbiddenPatterns": [
+    {
+      "id": "vc-09",
+      "pattern": "(/Users/|/home/[a-z]|C:\\\\\\\\Users)",
+      "files": "\\.(json|yml|yaml|md|mjs|js|py|toml|command|bat)$",
+      "exempt": [
+        "llmfw.config.json",
+        "docs/conventions/**",
+        "docs/superpowers/**",
+        "docs/adoption-scorecard.md"
+      ],
+      "message": "machine-specific path committed — move to the gitignored .local sibling"
+    },
+    {
+      "id": "llm-10",
+      "pattern": "(#|//)\\s*(TODO|FIXME|HACK)\\b",
+      "files": "\\.(py|js|mjs|css|html)$",
+      "message": "a known cut is a `DEBT #N` comment with a ledger line, not a TODO"
+    },
+    {
+      "id": "llm-12",
+      "pattern": "os\\.environ|getenv\\(",
+      "files": "^src/.*\\.py$",
+      "exempt": [
+        "src/cpe_band_scan/store.py",
+        "src/cpe_band_scan/cli.py"
+      ],
+      "message": "config is read in one module — see docs/adoption-scorecard.md"
+    },
+    {
+      "id": "err-06",
+      "pattern": "except (Exception|BaseException|\\([^)]*Exception[^)]*\\))[^\\n]*:\\s*\\n\\s*(pass|continue)\\b|except OSError[^\\n]*:\\s*\\n\\s*pass\\b",
+      "files": "^src/.*\\.py$",
+      "exempt": [
+        "src/cpe_band_scan/metrics.py",
+        "src/cpe_band_scan/speed.py"
+      ],
+      "message": "a swallowed failure — raise a RouterError code or say why at the code"
+    },
+    {
+      "id": "tst-04",
+      "pattern": "[\"']/api/",
+      "files": "^tests/.*\\.py$",
+      "exempt": [
+        "tests/test_end_to_end.py",
+        "tests/test_server.py",
+        "tests/test_server_jobs.py",
+        "tests/test_server_runs.py"
+      ],
+      "message": "a test spells a route by its constant, never a literal"
+    },
+    {
+      "id": "llm-03",
+      "pattern": "^(from|import)\\s",
+      "files": "__init__\\.py$",
+      "exempt": [
+        "src/cpe_band_scan/__init__.py"
+      ],
+      "message": "a package init re-exports nothing — import the real module"
+    },
+    {
+      "id": "llm-04",
+      "pattern": "importlib\\.import_module\\(|pkgutil\\.iter_modules|__import__\\(",
+      "files": "^src/.*\\.py$",
+      "message": "no import scans — every registration is an explicit list"
+    }
+  ],
+  "forbiddenPaths": [
+    {
+      "id": "llm-02",
+      "pattern": "(^|/)(utils?|helpers?|misc|common|shared|stuff)\\.(py|js)$",
+      "allow": [],
+      "message": "grab-bag file — name the file after the one thing it does"
+    }
+  ],
+  "toolchain": [
+    {
+      "source": ".python-version"
+    },
+    {
+      "source": ".nvmrc"
+    }
+  ]
+}

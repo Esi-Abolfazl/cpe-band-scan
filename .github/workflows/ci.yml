@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
+      # The three lines below are AGENTS.md § Gates, verbatim.
+      - run: .venv/bin/python -m pytest -q
+      - run: node scripts/check-repo.mjs
+      - run: .venv/bin/python scripts/check_baseline.py
