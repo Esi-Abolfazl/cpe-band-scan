@@ -24,6 +24,9 @@ from .router import Router, RouterError, host
 
 WEB = Path(__file__).parent / "web"
 DEFAULT_URL = "http://192.168.8.1/"
+ALLOWED_HOSTS = ("127.0.0.1", "localhost")
+TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
+         ".css": "text/css; charset=utf-8"}
 
 
 def finite(value):
@@ -35,9 +38,8 @@ def finite(value):
     if isinstance(value, (list, tuple)):
         return [finite(item) for item in value]
     return value
-ALLOWED_HOSTS = ("127.0.0.1", "localhost")
-TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
-         ".css": "text/css; charset=utf-8"}
+
+
 SLEEP = time.sleep    # real between-band and between-sample waits; read at call time so
                       # tests can swap in a no-op instead of waiting out real settle/gap delays
 SETTLE_GRACE = scanner.PER_SET + 5   # worst case: cancel lands just as a band's settle-and-

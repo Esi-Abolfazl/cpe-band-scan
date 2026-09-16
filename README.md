@@ -127,8 +127,8 @@ saw. **Stop the test** ends it early and still puts your lock back.
 Once the router holds a lock you like, give it a name and press **Save current lock**. One profile
 per carrier or per place: "MCI, living room", "Irancell, office". Each row shows the carrier, the
 bands in the lock and when it was saved. **Apply** puts that lock back on the router, and the row
-the router really holds shows **In use**. Rename and Delete do what they say. Profiles live on this
-computer, so they follow you when you move the router or swap the SIM.
+the router really holds shows **In use**. **Rename** edits the name in the row. **Delete** asks for a
+second press. Profiles live on this computer, so they follow you when you move the router or swap the SIM.
 
 ### Using a VPN
 

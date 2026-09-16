@@ -145,3 +145,9 @@ branch must pass, not a preference.
   carrier or place. Terminal scans still land in `runs/` for `show`.
 - The password is written to disk only behind the Remember tick (owner-only file, Forget removes it).
   A keychain would be safer; it needs a dependency or per-OS shelling out, so it waits for a request.
+
+## Ruling 2026-09-16, later: no browser dialogs
+
+`window.prompt`, `confirm` and `alert` never appear. Embedded browsers block them and they look
+nothing like the page. Rename edits in the row; a destructive action needs a second press whose label
+says so (Delete → Delete now). Guarded by `test_the_page_never_opens_a_browser_dialog`.
