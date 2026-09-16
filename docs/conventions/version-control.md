@@ -64,3 +64,10 @@ Enforced by: `check-repo.mjs` `forbidden-patterns` (`/Users/`, `/home/`, `C:\\Us
 Dockerfile base image and every CI runner pin the **same** version, with roll-forward disabled.
 Analyzers ship with the toolchain; a drifting patch makes warnings-as-errors disagree between
 machines. Enforced by: `check-repo.mjs` `toolchain-version`.
+
+## vc-20 — This repo lands on `main` directly; `vc-08` does not apply
+
+One owner, no reviewers: an agent session commits to `main` and pushes fast-forward once the
+`AGENTS.md` gates are green locally. No pull requests unless the owner asks for one. CI runs the
+same gates on every push to `main` as the record. `vc-03` still holds: rewriting pushed history
+is ask-first.

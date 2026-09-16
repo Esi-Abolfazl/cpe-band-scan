@@ -22,7 +22,7 @@ file's directory. There are no scope cards yet; this file is the whole contract.
 | Naming, comments, barrels, generated output — any change | `docs/conventions/llm-friendly.md` |
 | Errors, wire keys, messages | `docs/conventions/errors.md` |
 | Tests | `docs/conventions/testing.md` |
-| Commits, branches, PRs | `docs/conventions/version-control.md` |
+| Commits, branches, landing on `main` | `docs/conventions/version-control.md` |
 | Which doc owns which fact, Definition of Done | `docs/conventions/documents.md` |
 | Python-specific rules, the reference slice | `docs/conventions/python.md` |
 | Invariants a compiler can't check | `docs/adr/` |
@@ -88,7 +88,7 @@ the PR that grows a count. The one remaining exemption is the framework's own
 - Read config/env outside `config.py` (`llm-12`).
 - Swallow a failure (`err-06`).
 - Put the router password on a command line, in a log line or in a test fixture committed to git.
-- Push `main` directly from an agent session (`vc-08`).
+- Open a pull request unless the owner asks for one (`vc-20`): work lands on `main` directly.
 - Commit a machine-specific path (`vc-09`).
 - A test that touches the real `~/.cpe-band-scan` (`py-04`) or patches an app module to test its
   sibling (`py-05`).
