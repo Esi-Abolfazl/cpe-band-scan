@@ -17,7 +17,7 @@ started.
 
 Still open: `ruff` as lint+format gate (ask-first, `.agents/handoffs/2026-09-16-ruff-lint-format-gate.md`);
 slices per route and modules (Phase 3, deferred until `api.py` or a second product needs them —
-`ARCHITECTURE.md` § don't have yet); commit-msg hook (`vc-01`); the flaky fake download server
+`ARCHITECTURE.md` § don't have yet); the flaky fake download server
 (`.agents/handoffs/2026-09-17-flaky-fake-download-server.md`).
 
 ## Audit, 2026-09-16

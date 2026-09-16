@@ -88,7 +88,7 @@ the PR that grows a count. The one remaining exemption is the framework's own
 - Read config/env outside `config.py` (`llm-12`).
 - Swallow a failure (`err-06`).
 - Put the router password on a command line, in a log line or in a test fixture committed to git.
-- Open a pull request unless the owner asks for one (`vc-20`): work lands on `main` directly.
+- Branch or open a pull request unless the owner asks for one (`vc-20`).
 - Commit a machine-specific path (`vc-09`).
 - A test that touches the real `~/.cpe-band-scan` (`py-04`) or patches an app module to test its
   sibling (`py-05`).

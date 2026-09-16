@@ -22,18 +22,11 @@ locale fails a test. This is what lets a client render `detail` without shipping
 
 ## err-03 — Problem responses carry `errorKey` and a non-empty `detail`
 
-HTTP errors are RFC 9457 Problem Details with two extensions: `errorKey` (the derived key the client
-branches on) and `detail` (the sentence, already translated to the caller's locale). Every problem
-the API emits — including framework-produced ones (routing 404, binding 400) — carries both; a
-backfill in the kernel guarantees it. A validation failure is a 400 with per-field `errors` **plus**
-the same key and detail, never a bare 400.
+Retired for this repo: the API answers `{"error": code, "message": sentence}` to its own page only; no RFC 9457 client exists.
 
 ## err-04 — The key set reaches the client as a type
 
-The set of wire keys is emitted into the API contract (OpenAPI enum, generated union type) so a
-client branching on a key that no longer exists fails type-checking, not production. The client
-error catalog holds **transport-level** keys only (network, timeout, unknown); every server sentence
-comes from the server.
+Retired for this repo: no generated client; the page reads the same `copy.ERRORS` the server does.
 
 ## err-05 — Errors are exceptions to flow, not to values
 

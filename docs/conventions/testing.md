@@ -12,16 +12,11 @@ siblings, never grouped by layer.
 
 ## tst-02 — Real infrastructure, never in-memory fakes of it
 
-Integration tests run against the real database engine, the real queue, the real cache — in
-containers (Testcontainers or equivalent) — migrated by the exact path production uses. An
-in-memory database provider, a mocked ORM, or an `EnsureCreated` schema is never a dependency:
-they pass on behavior production rejects.
+Retired for this repo: no database, queue or cache exists; the router is faked at the library seam (`py-05`).
 
 ## tst-03 — Per-test reset, order-independent, serial per assembly
 
-One container + one app host + one reset helper per test assembly. The database is reset **before**
-each test (never after — a crashed test must not poison the next), tests within an assembly run
-serially against one database, and no test depends on another's leftover state or on order.
+Retired for this repo: no shared infrastructure to reset; every test gets its own temp home (`py-04`).
 
 ## tst-04 — Tests reference the slice's route const, never a literal path
 
@@ -33,20 +28,15 @@ Enforced by: Oxlint `llmfw/no-literal-route-in-test`; analyzer or grep gate in o
 
 ## tst-05 — Tests deserialize with the host's serializer configuration
 
-The test project references the same JSON options object the host uses. A serialization mismatch
-then fails as a compile-time reference, not a runtime surprise.
+Retired for this repo: the server and its tests share `json` from the stdlib; there is no serializer config.
 
 ## tst-06 — A schema conventions test per module
 
-Each module's test project runs a shared assertion over its model: naming convention followed, no
-foreign key leaves the module's schema (`vs-09`), every tenant-scoped entity has its filter, every
-timestamp is an instant type, delete behavior explicit. New modules copy the one-line wiring.
+Retired for this repo: no schema, no ORM, no module boundary to assert over.
 
 ## tst-07 — One end-to-end spec per UI feature folder
 
-Every `features/<name>/` has a `tests/e2e/<name>*.spec.*`. `check-repo.mjs` `feature-e2e` fails
-the build otherwise. The spec exercises the feature through the real UI against the real API, in
-every supported locale where layout differs (RTL).
+Retired for this repo: no UI feature folders and no browser driver; the page is checked by `tests/test_parity.py` and `tests/test_page_quality.py`.
 
 ## tst-08 — Architecture tests are tests
 

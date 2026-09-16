@@ -96,4 +96,4 @@ See `gates/README.md` for which layer catches what.
 A "no" to (4), or a "yes" to (1)–(3), means no ADR — fix the rule in its real home instead.
 Template: `agents/templates/adr.md`.
 
-Version: 0.2.0
+Version: 0.3.0

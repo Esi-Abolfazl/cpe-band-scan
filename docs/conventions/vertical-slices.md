@@ -77,10 +77,7 @@ has no domain meaning.
 
 ## vs-09 — Persistence is module-private
 
-A module's DbContext / repository / table set is internal to it. No cross-module foreign key, no
-cross-module join, no shared table. Data another module needs is exposed through the contracts door
-as a typed query or a projected DTO. Enforced by: a schema conventions test per module (no FK
-leaves the module's schema) — see `tst-06`.
+Retired for this repo: persistence is a folder of JSON files owned by `store.py`; there is no second module to keep it private from.
 
 ## vs-10 — A slice ships with its test and its registration
 

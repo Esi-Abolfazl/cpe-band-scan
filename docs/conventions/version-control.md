@@ -2,15 +2,12 @@
 
 Rule IDs: `vc-`.
 
-## vc-01 — Conventional commits, enforced by a hook
+## vc-01 — Conventional commit subjects, by habit
 
-Every commit message passes commitlint (or equivalent) against `config-conventional` plus the
-repo's `scope-enum`: one scope per module/package/feature plus `docs`, `ci`, `deploy`, `deps`,
-`tooling`, `agents`. Subject ≤ 100 chars, lower-case start, imperative.
+`type(scope): subject`, lower-case, imperative, ≤ 72 chars; scope optional in a repo this size.
+No commit hook: one person writes these and reads them back.
 
-✓ `feat(identity): add switch-company slice` ✗ `Fixed the login bug`
-
-Enforced by: `commit-msg` hook via lefthook/husky/pre-commit.
+✓ `feat(speed): per-band speed and ping probe` ✗ `Fixed the login bug`
 
 ## vc-02 — Body explains why, not what
 
@@ -40,15 +37,11 @@ A migration that has shipped is immutable. A fix is a new migration.
 
 ## vc-07 — PR template is filled, not deleted
 
-What / Why / How verified (gate output pasted, not asserted) / Out of scope / Debt added (`DEBT #N`
-or "None") / Handoffs created (paths) / Screens for any UI change in each supported locale.
+Retired for this repo: there is no pull request to template. `doc-04` is the Definition of Done.
 
 ## vc-08 — An agent session reaches `main` only through a PR
 
-An agent never pushes `main`. It branches, opens a PR, enables auto-merge with rebase; `main`
-moves when CI is green and not before. This is not taste: a direct push is a commit no gate ever
-saw, and it makes every green check on every other PR a statement about a tree that no longer
-exists.
+Retired for this repo: pull requests are a reviewer's tool; this is one person's app. `vc-20` says how work lands.
 
 ## vc-09 — Never commit machine-specific paths
 
@@ -65,9 +58,8 @@ Dockerfile base image and every CI runner pin the **same** version, with roll-fo
 Analyzers ship with the toolchain; a drifting patch makes warnings-as-errors disagree between
 machines. Enforced by: `check-repo.mjs` `toolchain-version`.
 
-## vc-20 — This repo lands on `main` directly; `vc-08` does not apply
+## vc-20 — Work lands on `main` directly
 
-One owner, no reviewers: an agent session commits to `main` and pushes fast-forward once the
-`AGENTS.md` gates are green locally. No pull requests unless the owner asks for one. CI runs the
-same gates on every push to `main` as the record. `vc-03` still holds: rewriting pushed history
-is ask-first.
+One person's app: commit to `main`, run the `AGENTS.md` gates, push fast-forward. No branches or
+pull requests unless the owner asks for one. CI repeats the gates on every push to `main` as the
+record. `vc-03` still holds: rewriting pushed history is ask-first.
