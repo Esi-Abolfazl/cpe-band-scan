@@ -81,8 +81,9 @@ only below 760px.
 - **Apply.** Label `Apply`. Click → all Apply buttons disabled, the clicked one shows `Applying…`,
   status is re-read after the write, then rows re-mark. Two distinct marks: `Best` (outline badge,
   top ranked row) and `In use` (filled accent badge + row tint, the row whose set equals the lock's
-  primary as read from the router). The in-use row's button is replaced by the text `In use`. Auto
-  row has no button; `Switch back to automatic` lives in the lock card.
+  primary as read from the router). The in-use row's button is replaced by the text `In use`. The auto
+  row is ranked like any band and its Apply puts that side back on automatic (ruling 2026-09-16,
+  later; the empty lock is what `In use` matches on that row).
 - **Test.** Form first: target (current lock, described from the parsed reading; or a band from the
   last results, which locks it for the test and restores the arriving lock in `finally`) and
   duration (1 / 2 / 5 / 10 min). Button `Start the test`, stop button `Stop the test`. Server:
