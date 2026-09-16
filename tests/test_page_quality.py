@@ -136,3 +136,10 @@ def test_picking_a_test_target_never_rebuilds_the_page():
 def test_the_test_lets_you_pick_a_4g_and_a_5g_band_together():
     assert 'sidePicker("lte"' in JS or '["lte", "nr"].map((side) => sidePicker(side' in JS
     assert "body.scell" in JS
+
+
+def test_the_page_never_opens_a_browser_dialog():
+    """window.prompt and window.confirm are blocked in embedded browsers and look nothing like
+    the page; rename is inline and delete needs a second press instead."""
+    assert "window.prompt" not in JS and "window.confirm" not in JS
+    assert "confirmDelete" in JS and "state.editing" in JS

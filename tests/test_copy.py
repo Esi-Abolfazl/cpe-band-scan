@@ -35,7 +35,7 @@ def test_no_string_asks_the_user_to_turn_off_a_vpn():
 
 
 BUTTON_VERBS = ("connect", "scan", "test", "use", "switch", "stop", "save", "open", "rename",
-                "delete", "refresh", "start", "apply", "forget")
+                "delete", "refresh", "start", "apply", "forget", "cancel")
 
 
 def test_every_button_label_starts_with_a_verb():

@@ -9,6 +9,8 @@ const state = {
   scope: "all", testTarget: "current", testPick: { lte: "", nr: "" }, testMinutes: "2",
   events: [], since: 0, running: false, kind: "", busy: false, pollFailures: 0,
   applying: null,          // {side, name} while an Apply request is in flight
+  editing: null,           // {id, name} while a profile row is being renamed
+  confirmDelete: null,     // profile id whose Delete was pressed once
   applyFailed: null,       // {side, name, message} when the router refused the last Apply
   live: null,              // the running job's DOM, built once per run and updated in place
 };
@@ -728,8 +730,12 @@ function profilesCard() {
     action("save_profile", onSaveProfile, { disabled: busy }));
   const rows = state.profiles.map((profile) => {
     const used = profileInUse(profile);
+    const editing = state.editing && state.editing.id === profile.id;
+    const nameInput = editing && el("input", { type: "text", value: state.editing.name, "aria-label": copy.FIELDS.profile_name.label,
+                                               oninput: (event) => { state.editing.name = event.target.value; },
+                                               onkeydown: (event) => { if (event.key === "Enter") onRenameProfile(profile); if (event.key === "Escape") stopEditing(); } });
     return el("tr", { class: used ? "used" : "" },
-      el("td", {}, el("b", {}, profile.name)),
+      el("td", {}, editing ? nameInput : el("b", {}, profile.name)),
       el("td", { class: "muted" }, profile.carrier),
       el("td", {}, profileLockWords(profile.lock)),
       el("td", { class: "muted num" }, profile.saved.slice(0, 16).replace("T", " ")),
@@ -738,9 +744,15 @@ function profilesCard() {
         : el("button", { type: "button", class: "apply", disabled: busy,
                          onclick: () => onApplyProfile(profile) },
              state.applying && state.applying.profile === profile.id ? copy.NOTES.applying : copy.ACTIONS.apply_profile.label)),
-      el("td", { class: "row-actions" },
-        el("button", { type: "button", class: "quiet", onclick: () => onRenameProfile(profile) }, copy.ACTIONS.rename_profile.label),
-        el("button", { type: "button", class: "quiet danger", onclick: () => onDeleteProfile(profile) }, copy.ACTIONS.delete_profile.label)));
+      el("td", { class: "row-actions" }, ...(editing
+        ? [el("button", { type: "button", class: "quiet", title: copy.ACTIONS.save_name.help, onclick: () => onRenameProfile(profile) }, copy.ACTIONS.save_name.label),
+           el("button", { type: "button", class: "quiet", title: copy.ACTIONS.cancel_rename.help, onclick: stopEditing }, copy.ACTIONS.cancel_rename.label)]
+        : [el("button", { type: "button", class: "quiet", title: copy.ACTIONS.rename_profile.help,
+                          onclick: () => { state.editing = { id: profile.id, name: profile.name }; state.confirmDelete = null; render(); } },
+              copy.ACTIONS.rename_profile.label),
+           el("button", { type: "button", class: "quiet danger", onclick: () => onDeleteProfile(profile),
+                          title: state.confirmDelete === profile.id ? copy.ACTIONS.confirm_delete.help : copy.ACTIONS.delete_profile.help },
+              state.confirmDelete === profile.id ? copy.ACTIONS.confirm_delete.label : copy.ACTIONS.delete_profile.label)])));
   });
   const list = state.profiles.length
     ? el("div", { class: "table-scroll" }, el("table", {}, el("tbody", {}, rows)))
@@ -779,26 +791,36 @@ async function onApplyProfile(profile) {
   render();
 }
 
+function stopEditing() {
+  state.editing = null;
+  render();
+}
+
 async function onRenameProfile(profile) {
-  const name = window.prompt(copy.FIELDS.profile_name.help, profile.name);
-  if (name === null) return;
+  const name = state.editing ? state.editing.name : profile.name;
   try {
     await api("POST", `/api/profiles/${profile.id}/rename`, { name });
     await refreshProfiles();
   } catch (failure) {
     showError(failure.message);
   }
+  state.editing = null;
   render();
 }
 
 async function onDeleteProfile(profile) {
-  if (!window.confirm(`${copy.ACTIONS.delete_profile.label} — ${profile.name}?`)) return;
+  if (state.confirmDelete !== profile.id) {       // first press only arms it; the second one deletes
+    state.confirmDelete = profile.id;
+    render();
+    return;
+  }
   try {
     await api("DELETE", `/api/profiles/${profile.id}`);
     await refreshProfiles();
   } catch (failure) {
     showError(failure.message);
   }
+  state.confirmDelete = null;
   render();
 }
 

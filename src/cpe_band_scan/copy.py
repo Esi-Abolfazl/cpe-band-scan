@@ -125,6 +125,18 @@ ACTIONS = {
         "label": "Delete",
         "help": "Removes this profile from your computer. The router keeps whatever lock it has.",
     },
+    "confirm_delete": {
+        "label": "Delete now",
+        "help": "Second press. The profile is gone for good.",
+    },
+    "save_name": {
+        "label": "Save name",
+        "help": "Keeps the new name.",
+    },
+    "cancel_rename": {
+        "label": "Cancel",
+        "help": "Keeps the old name.",
+    },
     "forget": {
         "label": "Forget the password",
         "help": "Removes the remembered password from this computer. You'll type it next time.",
