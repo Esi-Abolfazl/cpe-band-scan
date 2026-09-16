@@ -213,9 +213,11 @@ class Handler(BaseHTTPRequestHandler):
                 store.remember_password(None)
                 return self._json({"remembered": False})
             if path == "/api/profiles":
-                router = self.session.require_router()
-                profile = store.save_profile(body.get("name") or "", self.session.device.carrier,
-                                             lockfreq.read_lock(router))
+                with self.session.lock:
+                    self.session.require_idle()              # mid-scan the lock is whatever band is under test
+                    router = self.session.require_router()
+                    profile = store.save_profile(body.get("name") or "", self.session.device.carrier,
+                                                 lockfreq.read_lock(router))
                 return self._json({"profile": profile})
             if path.startswith("/api/profiles/") and path.endswith("/rename"):
                 try:

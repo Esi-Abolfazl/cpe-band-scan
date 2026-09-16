@@ -181,6 +181,7 @@ def test_a_two_minute_test_runs_as_a_job(live, monkeypatch):
     ("/api/apply", {"lte": ["7"]}),
     ("/api/clear", {}),
     ("/api/connect", {"url": "192.168.8.1", "password": "pw"}),
+    ("/api/profiles", {"name": "mid-scan"}),
 ])
 def test_nothing_touches_the_router_while_a_job_runs(live, path, body):
     """The page greys these buttons out, but the page is a mirror. A write that lands mid-scan

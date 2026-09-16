@@ -12,7 +12,7 @@ without an LLM. The skill itself survives, moved inside the app's own repository
 | Install name | `cpe-band-scan` | `pipx install cpe-band-scan` |
 | Import package | `cpe_band_scan` | |
 | Commands | `cpe-band-scan`, with `cpescan` as a short alias | Both reach the same CLI. `cpe-band-scan ui` opens the page |
-| Stored data | `~/.cpe-band-scan` | Saved runs and the remembered router address. Never a password |
+| Stored data | `~/.cpe-band-scan` | Terminal runs, lock profiles and the remembered router address. The password only behind the page's Remember tick, in an owner-only file (superseded 2026-09-16: the user asked not to retype it) |
 | The bundled skill | `bandscan`, invoked `/bandscan` | A slash command is typed often, so it stays short. It ships in `skills/bandscan` inside this repo |
 
 ## Goal
@@ -67,7 +67,7 @@ localhost, not through the router's WAN).
 | Throughput/speed test per band | Measures the whole path (VPN, peering, server), not the radio; slow and noisy. The radio metrics answer the question asked. | Users ask "but what Mbps?" — then add an opt-in per-band speedtest with a clear label that it measures the whole path |
 | Firmware 3.x/2.x driver (`net-mode` band mask) | No device on hand to test the write against; a wrong mask can drop the connection. The probe already names the case. | A 3.x device is available to test on |
 | Signed, double-clickable native bundle (PyInstaller/Tauri) | Needs code signing and notarisation per OS to avoid scary warnings. | Distributing beyond people who can run one install command |
-| Password in the OS keychain | In-memory is enough for a single run and avoids a `keyring` dependency plus a per-OS unlock prompt. | Users run scans often enough to be annoyed by retyping |
+| Password in the OS keychain | In-memory is enough for a single run and avoids a `keyring` dependency plus a per-OS unlock prompt. Retyping did annoy, so the page now offers an opt-in owner-only file instead (2026-09-16). | Someone wants it out of a plain file: keychain becomes the next step |
 | Persian UI | Not requested. `copy.py` is a flat dict, so a second language is a second dict, not a refactor. | Asked for |
 | Scheduled / repeated scans | The lock is set once per location; re-scanning is a manual decision. | Someone wants an overnight comparison |
 | Multiple routers at once | One radio, one lock. | Never, probably |
