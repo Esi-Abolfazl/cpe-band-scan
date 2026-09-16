@@ -60,7 +60,7 @@ def _scan_side(router, side, sets, expect_5g, cancelled, sleep):
                 yield {"type": "set_skipped", "side": side, "name": name, "reason": "no_service"}
                 continue
             measurement = metrics.measure(router, sleep=sleep)
-            measurement["grade"] = metrics.grade(measurement, expect_5g)
+            measurement["grade"] = metrics.grade(measurement, expect_5g or side == "nr")
             measurement["bands"] = bands
             results[name] = measurement
             yield {"type": "set_result", "side": side, "name": name, "result": measurement}
@@ -93,12 +93,12 @@ def choose(run: dict, original: dict) -> tuple[dict, str]:
     away without a reason it can state, so a side keeps what it arrived with - from
     `original` - unless the scan concluded something about that side.
 
-    Two conclusions count. The best LTE band beat the auto row (the router's own choice,
-    measured the same way for comparison): lock it, with every other live band as a
-    secondary so carrier aggregation survives. Or the auto row beat every band: leave the
-    LTE side on automatic, the one case where an arriving lock is deliberately given up.
-    An NR lock needs two or more NR bands ranked - on NSA the NR carrier follows the LTE
-    anchor, so locking the only one that answered concludes nothing.
+    Two conclusions count. A band tops the LTE ranking: lock it, with every other ranked
+    band as a secondary so carrier aggregation survives. Or the auto row (the router's own
+    choice, measured the same way) tops it: leave the LTE side on automatic, the one case
+    where an arriving lock is deliberately given up. An NR lock needs a band on top and two
+    or more NR bands ranked - on NSA the NR carrier follows the LTE anchor, so locking the
+    only one that answered concludes nothing.
 
     `outcome` names the result for the person: "applied" when the scan chose anything,
     "kept_auto" when the auto row won, "unchanged" when the scan concluded nothing and
@@ -107,19 +107,19 @@ def choose(run: dict, original: dict) -> tuple[dict, str]:
     chose = auto_won = False
     lte = run["sides"].get("lte")
     if lte and lte["order"]:
-        best = lte["results"][lte["order"][0]]
-        auto = lte["results"].get("auto")
-        if not auto or best["floor"] >= auto["floor"]:
-            plan["lte"] = list(lte["sets"][lte["order"][0]])
+        best = lte["order"][0]
+        if best == "auto":
+            auto_won = True
+        else:
+            plan["lte"] = list(lte["sets"][best])
             plan["lte_scell"] = [band for name in lte["order"][1:] for band in lte["sets"][name]]
             chose = True
-        else:
-            auto_won = True
     else:
         plan["lte"] = list(original["lte"][0])
         plan["lte_scell"] = list(original["lte"][1])
     nr = run["sides"].get("nr")
-    if nr and len(nr["order"]) >= 2:
+    nr_bands = [name for name in nr["order"] if name != "auto"] if nr else []
+    if nr and len(nr_bands) >= 2 and nr["order"][0] != "auto":
         plan["nr"] = list(nr["sets"][nr["order"][0]])
         chose = True
     else:

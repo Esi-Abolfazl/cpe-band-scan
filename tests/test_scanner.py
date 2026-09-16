@@ -418,8 +418,8 @@ def nr_signal(nrsinr, band="B7(N78)"):
 
 def test_a_5g_scan_orders_the_bands_by_their_own_carrier():
     """One baseline read, then six reads per set (one attach check, five samples): N78 at 2 dB,
-    N79 at 20 dB, then the auto row. The LTE floor is 8 dB in every read, so if N79 is not first
-    the ranking is reading the anchor instead of the NR carrier."""
+    N79 at 20 dB, then the auto row at 5 dB. The LTE floor is 8 dB in every read, so if N79 is
+    not first the ranking is reading the anchor instead of the NR carrier."""
     session = FakeSession({
         "device/signal": Seq([nr_signal(2)] * 7 + [nr_signal(20)] * 6 + [nr_signal(5)] * 6),
         "net/lock-freq": {"lte_info": {}, "nr_info": {}},
@@ -430,7 +430,7 @@ def test_a_5g_scan_orders_the_bands_by_their_own_carrier():
     router = Router("192.168.8.1", "pw", connection_factory=factory(session))
     events = run_scan(router=router, device=DEVICE, sides=("nr",))
     done = next(event for event in events if event["type"] == "side_done")
-    assert done["order"] == ["N79", "N78"]
+    assert done["order"] == ["N79", "auto", "N78"]
 
 
 def test_a_test_stopped_before_its_first_sample_ends_without_a_summary():
@@ -483,3 +483,19 @@ def test_a_trace_can_lock_a_4g_and_a_5g_band_together_with_secondaries():
     first = [p[1] for p in session.posts if p[0] == "net/lock-freq"][0]
     assert first["lte_info"]["all_bands"] == "1,3"
     assert first["nr_info"]["freq_infos"]["freq_info"] == [{"band": "78"}]
+
+
+def test_a_5g_side_row_without_a_5g_carrier_is_graded_no_5g_even_when_none_was_expected():
+    """No 5G anywhere: every N band is skipped and only the auto row is measured. Grading it on
+    the 4G numbers showed 'Excellent' on a 5G table that had no 5G in it."""
+    session = FakeSession({
+        "device/signal": Seq([{"band": "B7", "sinr": "8", "rsrq": "-10", "rsrp": "-85"}] * 40),
+        "net/lock-freq": {"lte_info": {}, "nr_info": {}},
+        "config/network/bandfreqlist.xml": {"config": {"lte_support_band_list": "7",
+                                                       "nr_support_band_list": "78"}},
+        "device/nbrcellinfo": {}, "device/seccellinfo": {},
+    })
+    router = Router("192.168.8.1", "pw", connection_factory=factory(session))
+    events = run_scan(router=router, device=DEVICE, sides=("nr",))
+    done = next(event for event in events if event["type"] == "side_done")
+    assert done["results"]["auto"]["grade"] == "no5g" and done["order"] == []

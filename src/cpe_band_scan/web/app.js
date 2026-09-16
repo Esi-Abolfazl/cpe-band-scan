@@ -516,11 +516,10 @@ const COLUMN_KEYS = ["rank", "band", "grade", "five_g", "floor", "sinr", "rsrq",
 
 function inUse(side, record, name) {
   const lock = state.status && state.status.lock[side];
-  return Boolean(lock && lock[0].length && sameBands(record.sets[name], lock[0]));
+  return Boolean(lock && sameBands(record.sets[name], lock[0]));   // auto is the empty lock
 }
 
 function applyCell(side, record, name) {
-  if (name === "auto") return el("td", {});
   if (inUse(side, record, name)) return el("td", {}, el("span", { class: "badge in-use" }, copy.NOTES.in_use));
   const mine = state.applying && state.applying.side === side && state.applying.name === name;
   const failed = state.applyFailed && state.applyFailed.side === side && state.applyFailed.name === name;
@@ -575,7 +574,8 @@ async function onApply(side, record, name) {
   state.applyFailed = null;
   render();
   const chosen = record.sets[name];
-  const others = record.order.filter((other) => other !== name).flatMap((other) => record.sets[other]);
+  const others = name === "auto" ? []
+    : record.order.filter((other) => other !== name).flatMap((other) => record.sets[other]);
   const payload = side === "nr" ? { nr: chosen } : { lte: chosen, scell: others };
   try {
     await api("POST", "/api/apply", payload);

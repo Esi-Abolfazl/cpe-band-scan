@@ -90,9 +90,9 @@ One table per network, best first. Columns:
 
 | Column | Meaning |
 |---|---|
-| # | rank. The auto row is the router's own choice, measured the same way for comparison, and is never ranked |
+| # | rank, by rating first, then by the lowest quality. The auto row is the router's own choice, measured the same way, and competes like any band |
 | Band | the band that was locked. **Best** marks the top of the ranking |
-| Rating | Excellent, Good, Fair, Poor, or Loses 5G |
+| Rating | Excellent, Good, Fair, Poor, or No 5G |
 | 5G | whether the 5G carrier stayed up on this band. Bands that lose it are never recommended |
 | Lowest | the lowest SINR seen, in dB. This is what makes a call or a stream stutter. Above 0 is usable, above 5 is comfortable |
 | Typical | the middle SINR reading, in dB |
@@ -105,7 +105,7 @@ When the scan ends, the app locks the best band itself, with the other working b
 carriers so carrier aggregation survives. If automatic held up better than any single band, or no
 band beat what you already had, it says so and changes nothing.
 
-To lock a different row, press its **Apply**. Every Apply button waits while the router takes the
+To lock a different row, press its **Apply**. Apply on the auto row puts that side back on automatic. Every Apply button waits while the router takes the
 lock, then the row the router actually reports shows **In use**. Best and In use are two different
 marks: one is the measurement, the other is the fact.
 

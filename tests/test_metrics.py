@@ -80,25 +80,33 @@ def test_losing_5g_is_not_held_against_a_4g_only_connection():
     assert metrics.grade({"floor": 12, "rsrq": -8, "has5g": False}, expect_5g=False) == "excellent"
 
 
-def test_rank_orders_by_floor_then_by_typical_signal():
+def test_rank_orders_by_grade_then_floor_then_typical_signal_and_auto_competes():
     results = {
-        "B1": {"floor": 2, "sinr": 9, "has5g": True},
-        "B7": {"floor": 7, "sinr": 8, "has5g": True},
-        "B40": {"floor": 2, "sinr": 11, "has5g": True},
-        "B3": {"floor": 20, "sinr": 20, "has5g": False},
-        "auto": {"floor": 30, "sinr": 30, "has5g": True},
+        "B1": {"floor": 2, "sinr": 9, "rsrq": -8, "has5g": True},
+        "B7": {"floor": 7, "sinr": 8, "rsrq": -8, "has5g": True},
+        "B40": {"floor": 2, "sinr": 11, "rsrq": -8, "has5g": True},
+        "B3": {"floor": 20, "sinr": 20, "rsrq": -8, "has5g": False},
+        "auto": {"floor": 30, "sinr": 30, "rsrq": -8, "has5g": True},
     }
-    assert metrics.rank(results) == ["B7", "B40", "B1"]
+    assert metrics.rank(results) == ["auto", "B7", "B40", "B1"]
+
+
+def test_a_fair_band_never_ranks_above_an_excellent_one_on_a_higher_floor():
+    """B3 had the same floor and a better typical signal than B1, but a dirty channel made it
+    Fair; the page then showed Fair above Excellent."""
+    results = {
+        "B3": {"floor": 7, "sinr": 8, "rsrq": -16, "has5g": True},
+        "B1": {"floor": 7, "sinr": 7, "rsrq": -6.5, "has5g": True},
+    }
+    assert metrics.rank(results) == ["B1", "B3"]
 
 
 def test_rank_keeps_a_band_with_no_5g_when_none_is_expected():
-    """The gap this test fills is why fix 1 went unnoticed: rank() already handled
-    expect_5g=False correctly, but nothing exercised that path directly."""
     results = {
-        "B1": {"floor": 5, "sinr": 9, "has5g": False},
-        "auto": {"floor": 30, "sinr": 30, "has5g": True},
+        "B1": {"floor": 5, "sinr": 9, "rsrq": -8, "has5g": False},
+        "auto": {"floor": 30, "sinr": 30, "rsrq": -8, "has5g": True},
     }
-    assert metrics.rank(results, expect_5g=False) == ["B1"]
+    assert metrics.rank(results, expect_5g=False) == ["auto", "B1"]
 
 
 def test_supported_bands_come_from_the_router_config():
@@ -118,18 +126,18 @@ def test_the_5g_side_is_ranked_by_the_5g_carrier():
     """During a 5G scan the 4G anchor stays on automatic, so the LTE floor is the same noise
     for every NR band. Only the NR carrier's own numbers tell the bands apart."""
     results = {
-        "N78": {"floor": 8, "sinr": 8, "nrsinr": 2, "nrrsrp": -80, "has5g": True},
-        "N1": {"floor": 8, "sinr": 8, "nrsinr": 20, "nrrsrp": -90, "has5g": True},
-        "N28": {"floor": 8, "sinr": 8, "nrsinr": 20, "nrrsrp": -70, "has5g": True},
-        "auto": {"floor": 8, "sinr": 8, "nrsinr": 30, "nrrsrp": -60, "has5g": True},
+        "N78": {"floor": 8, "sinr": 8, "rsrq": -8, "nrsinr": 2, "nrrsrp": -80, "has5g": True},
+        "N1": {"floor": 8, "sinr": 8, "rsrq": -8, "nrsinr": 20, "nrrsrp": -90, "has5g": True},
+        "N28": {"floor": 8, "sinr": 8, "rsrq": -8, "nrsinr": 20, "nrrsrp": -70, "has5g": True},
+        "auto": {"floor": 8, "sinr": 8, "rsrq": -8, "nrsinr": 30, "nrrsrp": -60, "has5g": True},
     }
-    assert metrics.rank(results, side="nr") == ["N28", "N1", "N78"]
+    assert metrics.rank(results, side="nr") == ["auto", "N28", "N1", "N78"]
 
 
 def test_the_4g_side_is_still_ranked_by_the_floor():
     results = {
-        "B7": {"floor": 7, "sinr": 8, "nrsinr": 2, "nrrsrp": -80, "has5g": True},
-        "B1": {"floor": 2, "sinr": 9, "nrsinr": 20, "nrrsrp": -70, "has5g": True},
+        "B7": {"floor": 7, "sinr": 8, "rsrq": -8, "nrsinr": 2, "nrrsrp": -80, "has5g": True},
+        "B1": {"floor": 2, "sinr": 9, "rsrq": -8, "nrsinr": 20, "nrrsrp": -70, "has5g": True},
     }
     assert metrics.rank(results, side="lte") == ["B7", "B1"]
 
@@ -139,8 +147,8 @@ def test_rank_leaves_out_rows_that_have_no_number_to_rank_on():
     it returns input order dressed up as a ranking."""
     nan = float("nan")
     results = {
-        "N78": {"floor": 8, "sinr": 8, "nrsinr": nan, "nrrsrp": nan, "has5g": False},
-        "N1": {"floor": 8, "sinr": 8, "nrsinr": 20, "nrrsrp": -90, "has5g": True},
+        "N78": {"floor": 8, "sinr": 8, "rsrq": -8, "nrsinr": nan, "nrrsrp": nan, "has5g": False},
+        "N1": {"floor": 8, "sinr": 8, "rsrq": -8, "nrsinr": 20, "nrrsrp": -90, "has5g": True},
     }
     assert metrics.rank(results, expect_5g=False, side="nr") == ["N1"]
 

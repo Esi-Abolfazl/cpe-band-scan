@@ -75,15 +75,20 @@ def grade(measurement: dict, expect_5g: bool = True) -> str:
 RANK_KEYS = {"lte": ("floor", "sinr"), "nr": ("nrsinr", "nrrsrp")}
 
 
+GRADE_ORDER = ("excellent", "good", "fair", "poor", "no5g")
+
+
 def rank(results: dict, expect_5g: bool = True, side: str = "lte") -> list[str]:
-    """Best first. 'auto' is a reference row, never a candidate. The 4G side ranks by the LTE
-    SINR floor; the 5G side by the NR carrier, because during a 5G scan the LTE anchor is on
-    automatic and its numbers say nothing about the NR band under test."""
+    """Best first: by grade, then by the floor, then by the typical signal. 'auto' competes
+    like any band, since leaving the router to choose is a choice too. The 4G side ranks by
+    the LTE SINR floor; the 5G side by the NR carrier, because during a 5G scan the LTE
+    anchor is on automatic and its numbers say nothing about the NR band under test."""
     first, second = RANK_KEYS.get(side, RANK_KEYS["lte"])
     live = {name: row for name, row in results.items()
-            if name != "auto" and (row.get("has5g") or not expect_5g)
+            if (row.get("has5g") or not expect_5g)
             and not (math.isnan(row.get(first, float("nan"))) or math.isnan(row.get(second, float("nan"))))}
-    return sorted(live, key=lambda name: (-live[name][first], -live[name][second]))
+    return sorted(live, key=lambda name: (GRADE_ORDER.index(grade(live[name], expect_5g)),
+                                          -live[name][first], -live[name][second]))
 
 
 def supported_bands(router: Router, side: str) -> list[str]:

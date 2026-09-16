@@ -164,7 +164,7 @@ COLUMNS = {
 }
 
 GRADES = {"excellent": "Excellent", "good": "Good", "fair": "Fair", "poor": "Poor",
-          "no5g": "Loses 5G"}
+          "no5g": "No 5G"}
 
 SIDES = {"lte": "4G", "nr": "5G", "trace": "test"}
 
