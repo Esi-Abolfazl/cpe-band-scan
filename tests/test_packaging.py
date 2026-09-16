@@ -33,7 +33,7 @@ def test_the_skill_never_recommends_the_password_on_the_command_line():
 
 def test_the_mac_launcher_runs_from_its_own_venv_and_is_executable():
     """The system python3 has no cpe_band_scan module; the launcher must make its own."""
-    launcher = ROOT / "run-cpe-band-scan.command"
+    launcher = ROOT / "Run on Mac.command"
     text = launcher.read_text(encoding="utf-8")
     assert "python3 -m venv .venv" in text
     assert ".venv/bin/cpe-band-scan ui" in text
@@ -42,7 +42,7 @@ def test_the_mac_launcher_runs_from_its_own_venv_and_is_executable():
 
 
 def test_the_windows_launcher_runs_from_its_own_venv():
-    text = (ROOT / "run-cpe-band-scan.bat").read_text(encoding="utf-8")
+    text = (ROOT / "Run on Windows.bat").read_text(encoding="utf-8")
     assert "python -m venv .venv" in text
     assert ".venv\\Scripts\\cpe-band-scan ui" in text
     assert "python -m cpe_band_scan" not in text
@@ -52,9 +52,9 @@ def test_the_readme_never_promises_a_package_that_is_not_published():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "pipx install cpe-band-scan" not in readme
     assert "pip install --user cpe-band-scan" not in readme
-    assert "run-cpe-band-scan.command" in readme and "run-cpe-band-scan.bat" in readme
+    assert "Run on Mac" in readme and "Run on Windows" in readme
 
 
 def test_the_launchers_name_the_python_floor_when_install_fails():
-    for name in ("run-cpe-band-scan.command", "run-cpe-band-scan.bat"):
+    for name in ("Run on Mac.command", "Run on Windows.bat"):
         assert "Python 3.10 or newer" in (ROOT / name).read_text(encoding="utf-8"), name

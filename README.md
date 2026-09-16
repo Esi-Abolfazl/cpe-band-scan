@@ -9,9 +9,9 @@ the router back on automatic.
 
 Not on PyPI yet, so it installs from this folder. You need Python 3.10 or newer.
 
-**Double-click** `run-cpe-band-scan.command` on macOS or `run-cpe-band-scan.bat` on Windows. The
-first run builds a private Python environment next to the app, which takes about a minute. After
-that it opens straight away.
+Two files in this folder are named for you: double-click **Run on Mac** or **Run on Windows**.
+The first run builds a private Python environment next to the app, which takes about a minute.
+After that it opens straight away.
 
 From a terminal in this folder instead:
 
