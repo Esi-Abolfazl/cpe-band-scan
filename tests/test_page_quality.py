@@ -143,3 +143,10 @@ def test_the_page_never_opens_a_browser_dialog():
     the page; rename is inline and delete needs a second press instead."""
     assert "window.prompt" not in JS and "window.confirm" not in JS
     assert "confirmDelete" in JS and "state.editing" in JS
+
+
+def test_log_lines_do_not_repeat_the_progress_bar_and_colour_the_verdict():
+    """The bar already says "9 of 11 · about 3 min left"; a log line is the band and its verdict."""
+    describe = re.search(r"function describe\(event\)\s*\{(.*?)\n\}", JS, re.S).group(1)
+    assert "words.set_start" not in describe and "words.log_measuring" in describe
+    assert "grade-${event.result.grade}" in describe and '"bad-text"' in describe

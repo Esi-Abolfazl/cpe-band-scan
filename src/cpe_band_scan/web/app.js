@@ -275,17 +275,29 @@ function scanCard() {
              { class: state.results ? "" : "primary", disabled })));
 }
 
+// A log line with one coloured word: the {slot} placeholder becomes `node`, or when there is no slot
+// the text after the band name is coloured with `tailClass`.
+function coloured(template, values, slot, node, tailClass) {
+  const text = fill(template, values);
+  if (slot) {
+    const [before, after] = text.split(`{${slot}}`);
+    return el("span", {}, before, node, after);
+  }
+  const cut = text.indexOf(": ") + 2;
+  return el("span", {}, text.slice(0, cut), el("span", { class: tailClass }, text.slice(cut)));
+}
+
 function describe(event) {
   const words = copy.PROGRESS;
   switch (event.type) {
-    case "set_start":
-      return fill(words.set_start, { name: event.name, index: event.index, total: event.total,
-                                     minutes: minutes(event.eta_s) });
+    case "set_start":                       // the bar already says "9 of 11 · about 3 min left"
+      return fill(words.log_measuring, { name: event.name });
     case "set_result":
-      return fill(words.set_result, { name: event.name, grade: copy.GRADES[event.result.grade],
-                                      floor: event.result.floor });
+      return coloured(words.log_result, { name: event.name, floor: event.result.floor, grade: "{grade}" },
+                      "grade", el("span", { class: `grade-${event.result.grade}` }, copy.GRADES[event.result.grade]));
     case "set_skipped":
-      return fill(words[event.reason] || words.refused, { name: event.name });
+      return coloured(event.reason === "refused" ? words.log_refused : words.log_skipped, { name: event.name },
+                      null, null, "bad-text");
     case "side_start":
       return fill(words.side_start, { side: copy.SIDES[event.side], count: event.total,
                                       minutes: minutes(event.eta_s) });
