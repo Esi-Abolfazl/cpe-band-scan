@@ -40,8 +40,10 @@ Two fields:
 
 - **Router address**: `192.168.8.1` for most Huawei routers, `192.168.1.1` for some. The app
   remembers the one that worked.
-- **Admin password**: the router's admin page password, not the Wi-Fi password. It stays in memory
-  while the app runs and is never written anywhere.
+- **Admin password**: the router's admin page password, not the Wi-Fi password. By default it stays
+  in memory while the app runs and is never written anywhere. Tick **Remember the password on this
+  computer** and you won't type it next time: it goes into the app's settings file, readable by
+  your user account only. **Forget the password** on the connect screen removes it again.
 
 Connecting reads the router's model and firmware and checks it can lock bands. Nothing on the
 router changes.
@@ -120,10 +122,13 @@ When two bands score close, test them for longer. The form asks two things:
 **Start the test** samples every 10 seconds and ends with the lowest, typical and best quality it
 saw. **Stop the test** ends it early and still puts your lock back.
 
-### Save and compare
+### Lock profiles
 
-Give a run a name and **Save results** keeps it on this computer. Saved results list below, with
-Open, Rename and Delete. Save a scan from each place or provider and you can compare them later.
+Once the router holds a lock you like, give it a name and press **Save current lock**. One profile
+per carrier or per place: "MCI, living room", "Irancell, office". Each row shows the carrier, the
+bands in the lock and when it was saved. **Apply** puts that lock back on the router, and the row
+the router really holds shows **In use**. Rename and Delete do what they say. Profiles live on this
+computer, so they follow you when you move the router or swap the SIM.
 
 ### Using a VPN
 
@@ -171,7 +176,8 @@ different interface, which the app doesn't speak yet.
 
 ## What it stores
 
-Saved runs and the router address live in `~/.cpe-band-scan`. The password never leaves memory.
+Lock profiles, terminal runs and the router address live in `~/.cpe-band-scan`. The password is
+stored there only if you tick Remember, and only until you press Forget.
 
 ## Try it without a router
 
@@ -208,4 +214,6 @@ ln -s "$PWD/skills/bandscan" ~/.claude/skills/bandscan
   keeps using a band that no longer suits it. Switch back to automatic when you move house or change
   provider.
 - **The results table is the last finished scan.** After a test and a page reload it is gone until
-  the next scan or until you open a saved run. Save the scans you care about.
+  the next scan. Terminal scans are saved under `runs` and can be reopened with `show`.
+- **A remembered password is a file.** It is readable only by your user account, but anyone who can
+  sign in as you can read it. Use Forget the password when the computer is shared.

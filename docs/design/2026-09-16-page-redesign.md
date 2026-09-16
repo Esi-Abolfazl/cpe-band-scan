@@ -139,5 +139,9 @@ branch must pass, not a preference.
 ## Follow-ups
 
 - The tables show the last finished scan. The server keeps one job's events, so after a test and a
-  page reload the scan table is gone until the next scan or a saved run is opened. Retire by having
-  `/api/status` return the last scan run alongside the last job, and the page read it on resume.
+  page reload the scan table is gone until the next scan. Retire by having `/api/status` return the
+  last scan run alongside the last job, and the page read it on resume.
+- The page saves lock profiles, not results: what a person comes back for is the lock, one per
+  carrier or place. Terminal scans still land in `runs/` for `show`.
+- The password is written to disk only behind the Remember tick (owner-only file, Forget removes it).
+  A keychain would be safer; it needs a dependency or per-OS shelling out, so it waits for a request.

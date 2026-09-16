@@ -10,12 +10,11 @@ APP = {
                      "at any time.",
     "status_heading": "Your connection now",
     "results_heading": "Band results, best first",
-    "saved_heading": "Saved results",
+    "profiles_heading": "Lock profiles",
     "test_heading": "Test a band without scanning",
     "lock_heading": "Band lock",
     "scan_heading": "Scan",
     "progress_heading": "Scan progress",
-    "save_heading": "Save this run",
     "results_side_heading": "{side} results, best first",
     "log_heading": "{side} log",
 }
@@ -35,11 +34,18 @@ FIELDS = {
                 "CPE Band Scan keeps it in memory while it runs, never writes it to disk, and never sends "
                 "it anywhere except your own router.",
     },
-    "run_name": {
-        "label": "Name",
+    "profile_name": {
+        "label": "Profile name",
         "placeholder": "MCI — living room",
         "help": "A name you'll recognise later, such as your carrier and where the router is standing. "
-                "CPE Band Scan suggests your carrier and today's date. Results stay on this computer.",
+                "CPE Band Scan suggests your carrier and today's date.",
+    },
+    "remember": {
+        "label": "Remember the password on this computer",
+        "placeholder": "",
+        "help": "Saves the admin password in CPE Band Scan's settings file, readable by your user "
+                "account only, so you don't type it next time. Anyone who can sign in as you on this "
+                "computer can read it. Forget it from the connect screen whenever you like.",
     },
     "scan_scope": {
         "label": "What to scan",
@@ -121,22 +127,27 @@ ACTIONS = {
         "help": "Stops after the band being measured and puts the router back how it arrived, lock and "
                 "all. Everything measured so far is kept.",
     },
-    "save": {
-        "label": "Save results",
-        "help": "Stores this run on this computer under a name, so you can reopen it and compare it with "
-                "a scan from another place or another provider.",
+    "save_profile": {
+        "label": "Save current lock",
+        "help": "Stores the lock the router holds right now under a name, so you can apply it again "
+                "later: one profile per carrier or per place.",
     },
-    "open_run": {
-        "label": "Open",
-        "help": "Shows the full table and details of a saved run.",
+    "apply_profile": {
+        "label": "Apply",
+        "help": "Locks the router to this profile's bands. The connection drops for about 30 seconds, "
+                "then comes back.",
     },
-    "rename_run": {
+    "rename_profile": {
         "label": "Rename",
-        "help": "Changes the name of a saved run. The results stay as they were.",
+        "help": "Changes the name of a profile. The lock in it stays as it was.",
     },
-    "delete_run": {
+    "delete_profile": {
         "label": "Delete",
-        "help": "Removes this saved run from your computer. This can't be undone.",
+        "help": "Removes this profile from your computer. The router keeps whatever lock it has.",
+    },
+    "forget": {
+        "label": "Forget the password",
+        "help": "Removes the remembered password from this computer. You'll type it next time.",
     },
     "refresh": {
         "label": "Refresh",
@@ -208,11 +219,16 @@ NOTES = {
     "vpn": "A VPN is fine to keep on. Stay on one server for the whole scan, because switching servers "
            "mid-run changes what you feel while the measurements stay the same. If CPE Band Scan can't reach "
            "the router while the VPN is up, switch on your VPN's local network access setting.",
-    "password_note": "The password stays in memory while CPE Band Scan runs and is never saved. Change it "
-                     "afterwards if someone else may have seen it.",
+    "password_note": "Unless you tick Remember, the password stays in memory while CPE Band Scan runs "
+                     "and is never saved. Change it afterwards if someone else may have seen it.",
+    "password_remembered": "The password is remembered on this computer.",
     "lock_survives": "The lock stays in place after a restart. Switch back to automatic whenever you want.",
     "rescan_hint": "Scan again after you move the router, change SIM, or change provider.",
-    "empty_runs": "No saved results yet. Finish a scan and save it, and it'll be here to compare against.",
+    "empty_runs": "No saved results yet. Finish a scan and it'll be here to compare against.",
+    "empty_profiles": "No profiles yet. Once the router holds a lock you like, save it here under a name "
+                      "and apply it again after you move or change carrier.",
+    "show_command": "Shows the full table and details of a saved run.",
+    "profile_auto": "Automatic on both sides",
     "empty_results": "No results yet. Start a scan to fill this table.",
     "auto_row": "Auto is what your router chose by itself, measured the same way for comparison.",
     "no_lock": "No band lock. The router is choosing bands by itself.",

@@ -2,9 +2,10 @@
 const { token, copy, defaults } = window.CPE_BAND_SCAN;
 
 const state = {
-  device: null, status: null, runs: [], run: null, results: null, viewing: null, suggestedName: "", runName: null,
-  // run: the last finished job of either kind, what Save stores. results: the last finished scan,
-  // what the tables and the test's band picker read; a test never takes it off the screen.
+  device: null, status: null, profiles: [], run: null, results: null, suggestedName: "", profileName: null,
+  remember: false,
+  // run: the last finished job of either kind. results: the last finished scan, what the tables and
+  // the test's band picker read; a test never takes it off the screen.
   scope: "all", testTarget: "current", testPick: { lte: "", nr: "" }, testMinutes: "2",
   events: [], since: 0, running: false, kind: "", busy: false, pollFailures: 0,
   applying: null,          // {side, name} while an Apply request is in flight
@@ -115,18 +116,35 @@ function showError(message) {
 // ---- connect ---------------------------------------------------------------
 function renderConnect() {
   const view = document.getElementById("view");
+  const remember = el("input", { type: "checkbox", id: "remember", checked: state.remember ? "" : null,
+                                 onchange: (event) => { state.remember = event.target.checked; } });
   view.replaceChildren(
     el("p", { class: "lede" }, copy.APP.connect_intro),
     el("div", { class: "card narrow" },
       heading("h2", copy.APP.connect_heading),
       field("router_url", "text", defaults.url),
-      field("password", "password"),
+      defaults.remembered
+        ? el("div", { class: "stack" },
+            el("p", { class: "note" }, copy.NOTES.password_remembered),
+            el("div", { class: "actions" }, action("forget", onForget, { class: "quiet" })))
+        : el("div", { class: "stack" },
+            field("password", "password"),
+            el("label", { class: "choice" }, remember, help("FIELDS", "remember"))),
       action("connect", onConnect, { class: "primary", id: "connect" }),
       el("p", { class: "note" }, copy.NOTES.password_note)),
     el("p", { class: "note narrow" }, copy.NOTES.vpn));
-  document.getElementById("password").addEventListener("keydown", (event) => {
-    if (event.key === "Enter") onConnect();
-  });
+  const password = document.getElementById("password");
+  if (password) password.addEventListener("keydown", (event) => { if (event.key === "Enter") onConnect(); });
+}
+
+async function onForget() {
+  try {
+    await api("POST", "/api/forget", {});
+    defaults.remembered = false;
+  } catch (failure) {
+    showError(failure.message);
+  }
+  render();
 }
 
 async function onConnect() {
@@ -134,15 +152,16 @@ async function onConnect() {
   state.busy = true;
   const button = document.getElementById("connect");
   if (button) button.disabled = true;               // in place: a render here would wipe the password
+  const password = document.getElementById("password");
+  const body = { url: document.getElementById("router_url").value };
+  if (password) { body.password = password.value; body.remember = state.remember; }
   try {
-    const answer = await api("POST", "/api/connect", {
-      url: document.getElementById("router_url").value,
-      password: document.getElementById("password").value,
-    });
+    const answer = await api("POST", "/api/connect", body);
     state.device = answer.device;
     state.suggestedName = answer.suggested_name;
+    if (password && state.remember) defaults.remembered = true;
     await refreshStatus();
-    await refreshRuns();
+    await refreshProfiles();
   } catch (failure) {
     showError(failure.message);
   } finally {
@@ -253,7 +272,7 @@ function scanCard() {
     el("div", { class: "form-row" },
       choices("scan_scope", state.scope, (value) => { state.scope = value; }, disabled),
       action("scan", () => onScan(SCOPES[state.scope]),
-             { class: (state.viewing || state.run) ? "" : "primary", disabled })),
+             { class: state.results ? "" : "primary", disabled })),
     el("p", { class: "note" }, copy.NOTES.vpn));
 }
 
@@ -434,8 +453,8 @@ function finishLive() {
 
 async function onScan(sides) {
   showError(null);
-  state.events = []; state.since = 0; state.run = null; state.runName = null; state.pollFailures = 0;
-  state.viewing = null; state.applyFailed = null;
+  state.events = []; state.since = 0; state.run = null; state.pollFailures = 0;
+  state.applyFailed = null;
   try {
     await api("POST", "/api/scan", { sides });
     state.running = true;
@@ -559,7 +578,7 @@ async function onApply(side, record, name) {
 
 // ---- test ------------------------------------------------------------------
 function pickable() {
-  const run = state.viewing || state.results;
+  const run = state.results;
   if (!run || !run.sides) return [];
   return Object.entries(run.sides).flatMap(([side, record]) =>
     record.order.map((name) => ({ side, name, bands: record.sets[name] })));
@@ -572,7 +591,7 @@ function picked() {
 }
 
 function testLock() {
-  const results = state.viewing || state.results;
+  const results = state.results;
   const chosen = picked();
   const lte = chosen.find((option) => option.side === "lte");
   const nr = chosen.find((option) => option.side === "nr");
@@ -650,7 +669,7 @@ function testCard() {
       targetChoices,
       choices("test_minutes", state.testMinutes, (value) => { state.testMinutes = value; }, disabled),
       action("test", onTest, { disabled })),
-    [state.viewing, state.run].find((run) => run && run.kind === "test") ? traceSummary([state.viewing, state.run].find((run) => run && run.kind === "test")) : null);
+    state.run && state.run.kind === "test" ? traceSummary(state.run) : null);
 }
 
 function traceSummary(run) {
@@ -676,7 +695,7 @@ async function onTest() {
     if (plan.lte.length) { body.lte = plan.lte; body.scell = plan.scell; }
     if (plan.nr.length) body.nr = plan.nr;
   }
-  state.events = []; state.since = 0; state.run = null; state.runName = null; state.pollFailures = 0;
+  state.events = []; state.since = 0; state.run = null; state.pollFailures = 0;
   try {
     await api("POST", "/api/test", body);
     state.running = true;
@@ -690,86 +709,96 @@ async function onTest() {
   }
 }
 
-// ---- saved runs ------------------------------------------------------------
-function saveCard() {
-  if (!state.run) return null;
-  const input = el("input", { type: "text", id: "run_name",
-                              value: state.runName ?? state.suggestedName ?? "",
-                              placeholder: copy.FIELDS.run_name.placeholder });
-  input.addEventListener("input", () => { state.runName = input.value; });
-  return el("div", { class: "card" },
-    heading("h2", copy.APP.save_heading),
-    el("div", { class: "field" }, el("label", { for: "run_name" }, copy.FIELDS.run_name.label), input),
-    el("div", { class: "actions" }, action("save", onSave, {})));
+// ---- lock profiles: a named lock to come back to ----------------------------------------------
+function profileLockWords(lock) {
+  const [lte, scell] = lock.lte;
+  return lockSentence({ lte, scell, nr: lock.nr[0] }) || copy.NOTES.profile_auto;
 }
 
-async function onSave() {
-  const name = document.getElementById("run_name").value;
-  try {
-    const answer = await api("POST", "/api/runs", { run: state.run, name });
-    state.run = answer.run;
-    await refreshRuns();
-    showError(null);
-  } catch (failure) {
-    showError(failure.message);
-  }
-  render();
+function profileInUse(profile) {
+  const lock = state.status.lock;
+  return ["lte", "nr"].every((side) => sameBands(profile.lock[side][0], lock[side][0]));
 }
 
-async function refreshRuns() {
-  try { state.runs = (await api("GET", "/api/runs")).runs; } catch { state.runs = []; }
-}
-
-function runSideLabel(row) {
-  if (row.kind === "test") return copy.SIDES.trace;
-  return (row.sides || []).map((side) => copy.SIDES[side]).join(" + ");
-}
-
-function savedRuns() {
-  const body = state.runs.length
-    ? el("table", {},
-        el("thead", {}, el("tr", {}, el("th", { scope: "col" }, copy.FIELDS.run_name.label), el("th", { scope: "col" }), el("th", { scope: "col" }),
-          el("th", { scope: "col" }))),
-        el("tbody", {}, state.runs.map((row) => el("tr", {},
-          el("td", {}, row.name),
-          el("td", { class: "muted" }, `${runSideLabel(row)} · ${row.saved}`),
-          el("td", {}, row.best || "—"),
-          el("td", { class: "row-actions" },
-            el("button", { type: "button", class: "quiet", onclick: () => onOpenRun(row.id) }, copy.ACTIONS.open_run.label),
-            el("button", { type: "button", class: "quiet", onclick: () => onRenameRun(row) }, copy.ACTIONS.rename_run.label),
-            el("button", { type: "button", class: "quiet danger", onclick: () => onDeleteRun(row) }, copy.ACTIONS.delete_run.label))))))
-    : el("p", { class: "note" }, copy.NOTES.empty_runs);
-  return el("div", { class: "card" }, heading("h2", copy.APP.saved_heading), body,
+function profilesCard() {
+  const busy = state.running || state.busy || Boolean(state.applying);
+  const input = el("input", { type: "text", id: "profile_name",
+                              value: state.profileName ?? state.suggestedName ?? "",
+                              placeholder: copy.FIELDS.profile_name.placeholder });
+  input.addEventListener("input", () => { state.profileName = input.value; });
+  const form = el("div", { class: "form-row" },
+    el("div", { class: "field" }, el("label", { for: "profile_name" }, help("FIELDS", "profile_name")), input),
+    action("save_profile", onSaveProfile, { disabled: busy }));
+  const rows = state.profiles.map((profile) => {
+    const used = profileInUse(profile);
+    return el("tr", { class: used ? "used" : "" },
+      el("td", {}, el("b", {}, profile.name)),
+      el("td", { class: "muted" }, profile.carrier),
+      el("td", {}, profileLockWords(profile.lock)),
+      el("td", { class: "muted num" }, profile.saved.slice(0, 16).replace("T", " ")),
+      el("td", {}, used
+        ? el("span", { class: "badge in-use" }, copy.NOTES.in_use)
+        : el("button", { type: "button", class: "apply", disabled: busy,
+                         onclick: () => onApplyProfile(profile) },
+             state.applying && state.applying.profile === profile.id ? copy.NOTES.applying : copy.ACTIONS.apply_profile.label)),
+      el("td", { class: "row-actions" },
+        el("button", { type: "button", class: "quiet", onclick: () => onRenameProfile(profile) }, copy.ACTIONS.rename_profile.label),
+        el("button", { type: "button", class: "quiet danger", onclick: () => onDeleteProfile(profile) }, copy.ACTIONS.delete_profile.label)));
+  });
+  const list = state.profiles.length
+    ? el("div", { class: "table-scroll" }, el("table", {}, el("tbody", {}, rows)))
+    : el("p", { class: "note" }, copy.NOTES.empty_profiles);
+  return el("div", { class: "card span" }, heading("h2", copy.APP.profiles_heading), form, list,
     el("p", { class: "note" }, copy.NOTES.rescan_hint));
 }
 
-async function onOpenRun(id) {
+async function refreshProfiles() {
+  try { state.profiles = (await api("GET", "/api/profiles")).profiles; } catch { state.profiles = []; }
+}
+
+async function onSaveProfile() {
+  showError(null);
   try {
-    state.viewing = (await api("GET", `/api/runs/${id}`)).run;
+    await api("POST", "/api/profiles", { name: document.getElementById("profile_name").value });
+    state.profileName = null;
+    await refreshProfiles();
   } catch (failure) {
     showError(failure.message);
   }
   render();
 }
 
-async function onRenameRun(row) {
-  const name = window.prompt(copy.FIELDS.run_name.help, row.name);
+async function onApplyProfile(profile) {
+  showError(null);
+  state.applying = { profile: profile.id };
+  render();
+  try {
+    await api("POST", `/api/profiles/${profile.id}/apply`, {});
+    await refreshStatus();
+  } catch (failure) {
+    showError(failure.message);
+  }
+  state.applying = null;
+  render();
+}
+
+async function onRenameProfile(profile) {
+  const name = window.prompt(copy.FIELDS.profile_name.help, profile.name);
   if (name === null) return;
   try {
-    await api("POST", `/api/runs/${row.id}/rename`, { name });
-    await refreshRuns();
+    await api("POST", `/api/profiles/${profile.id}/rename`, { name });
+    await refreshProfiles();
   } catch (failure) {
     showError(failure.message);
   }
   render();
 }
 
-async function onDeleteRun(row) {
-  if (!window.confirm(`${copy.ACTIONS.delete_run.label} — ${row.name}?`)) return;
+async function onDeleteProfile(profile) {
+  if (!window.confirm(`${copy.ACTIONS.delete_profile.label} — ${profile.name}?`)) return;
   try {
-    await api("DELETE", `/api/runs/${row.id}`);
-    if (state.viewing && state.viewing.id === row.id) state.viewing = null;
-    await refreshRuns();
+    await api("DELETE", `/api/profiles/${profile.id}`);
+    await refreshProfiles();
   } catch (failure) {
     showError(failure.message);
   }
@@ -779,19 +808,17 @@ async function onDeleteRun(row) {
 // ---- the page --------------------------------------------------------------
 function renderMain() {
   const view = document.getElementById("view");
-  const shown = state.viewing || state.results;
   const children = [
     deviceLine(),
     el("div", { class: "grid" },
       statusCard(),
       lockCard(),
+      profilesCard(),
       scanCard(),
       liveCard("scan"),
-      resultsTable(shown && shown.kind === "scan" ? shown : null),
+      resultsTable(state.results),
       testCard(),
-      liveCard("test"),
-      saveCard(),
-      savedRuns()),
+      liveCard("test")),
   ];
   view.replaceChildren(...children.flat().filter(Boolean));
 }
@@ -808,7 +835,7 @@ async function resume() {
   state.device = status.device;
   state.status = status;
   state.suggestedName = status.suggested_name || "";
-  await refreshRuns();
+  await refreshProfiles();
   const answer = await api("GET", "/api/events?since=0").catch(() => null);
   if (answer) {
     state.since = answer.since;

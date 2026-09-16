@@ -58,3 +58,57 @@ def test_an_unknown_run_is_a_404_not_a_crash(live):
 def test_a_run_id_that_walks_the_filesystem_is_refused(live):
     session, port = live
     assert call(port, "GET", "/api/runs/..%2f..%2fetc%2fpasswd", token=session.token)[0] == 404
+
+
+# ---- lock profiles ---------------------------------------------------------------------------
+from tests.test_server_jobs import _LTE_LOCKED_FACTORY, _LTE_LOCKED_FAKE, connect  # noqa: E402
+
+
+def test_saving_a_profile_reads_the_lock_from_the_router(live):
+    session, port = live
+    session._router_factory = _LTE_LOCKED_FACTORY
+    connect(port, session)
+    status, body = call(port, "POST", "/api/profiles", {"name": "Home"}, token=session.token)
+    assert status == 200
+    assert body["profile"]["name"] == "Home" and body["profile"]["carrier"] == "MCI"
+    assert body["profile"]["lock"]["lte"] == [["7"], []]
+    _, listed = call(port, "GET", "/api/profiles", token=session.token)
+    assert [row["id"] for row in listed["profiles"]] == [body["profile"]["id"]]
+
+
+def test_applying_a_profile_writes_its_whole_lock(live):
+    session, port = live
+    session._router_factory = _LTE_LOCKED_FACTORY
+    connect(port, session)
+    _, body = call(port, "POST", "/api/profiles", {"name": "Home"}, token=session.token)
+    status, _ = call(port, "POST", f"/api/profiles/{body['profile']['id']}/apply", {}, token=session.token)
+    assert status == 200
+    _, payload = _LTE_LOCKED_FAKE.posts[-1]
+    assert payload["lte_info"]["freq_infos"]["freq_info"] == [{"band": "7"}]
+    assert payload["nr_info"]["lock_mode"] == "0"
+
+
+def test_a_profile_can_be_renamed_and_deleted_over_the_api(live):
+    session, port = live
+    session._router_factory = _LTE_LOCKED_FACTORY
+    connect(port, session)
+    _, body = call(port, "POST", "/api/profiles", {"name": "Home"}, token=session.token)
+    pid = body["profile"]["id"]
+    _, renamed = call(port, "POST", f"/api/profiles/{pid}/rename", {"name": "Office"}, token=session.token)
+    assert renamed["profile"]["name"] == "Office"
+    assert call(port, "DELETE", f"/api/profiles/{pid}", token=session.token)[0] == 200
+    assert call(port, "GET", "/api/profiles", token=session.token)[1]["profiles"] == []
+    assert call(port, "POST", f"/api/profiles/{pid}/apply", {}, token=session.token)[0] == 404
+
+
+def test_a_remembered_password_signs_in_without_being_typed_again(live):
+    session, port = live
+    status, _ = call(port, "POST", "/api/connect",
+                     {"url": "192.168.8.1", "password": "pw", "remember": True}, token=session.token)
+    assert status == 200
+    from cpe_band_scan import store
+    assert store.remembered_password() == "pw"
+    status, _ = call(port, "POST", "/api/connect", {"url": "192.168.8.1"}, token=session.token)
+    assert status == 200
+    call(port, "POST", "/api/forget", {}, token=session.token)
+    assert store.remembered_password() == ""

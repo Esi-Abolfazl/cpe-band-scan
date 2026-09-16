@@ -121,15 +121,12 @@ def test_no_source_file_touches_the_forbidden_net_mode_endpoint():
         assert FORBIDDEN_ARG not in normalised, f"{path} references LTEBand, the net-mode argument"
 
 
-def test_the_typed_run_name_is_kept_in_state_not_only_in_the_input():
+def test_the_typed_profile_name_is_kept_in_state_not_only_in_the_input():
     """render() rebuilds every element, so an input's value lives only as long as the next
     render. Refresh, apply and the poll all render; the typed name must be in state."""
-    body = re.search(r"function saveCard\(\)\s*\{(.*?)\n\}", APP_JS, re.S).group(1)
-    assert "state.runName" in body, "saveCard() does not read the typed name back"
-    assert re.search(r'addEventListener\(\s*"input"', body), "saveCard() never records typing"
-    for name in ("onScan", "onTest"):
-        start = re.search(rf"async function {name}\([^)]*\)\s*\{{(.*?)\n\}}", APP_JS, re.S).group(1)
-        assert re.search(r"state\.runName\s*=\s*null", start), f"{name}() keeps a stale name"
+    body = re.search(r"function profilesCard\(\)\s*\{(.*?)\n\}", APP_JS, re.S).group(1)
+    assert "state.profileName" in body, "profilesCard() does not read the typed name back"
+    assert re.search(r'addEventListener\(\s*"input"', body), "profilesCard() never records typing"
 
 
 def test_the_scope_is_chosen_with_native_radios_and_one_start_button():

@@ -140,8 +140,10 @@ class Handler(BaseHTTPRequestHandler):
         return True
 
     def _page(self):
+        saved = store.settings()
         bootstrap = json.dumps({"token": self.session.token, "copy": copy.bundle(),
-                                "defaults": {"url": store.settings().get("router_url", DEFAULT_URL)}})
+                                "defaults": {"url": saved.get("router_url", DEFAULT_URL),
+                                             "remembered": bool(saved.get("password"))}})
         html = (WEB / "index.html").read_text(encoding="utf-8")
         self._send(200, html.replace("/*BOOTSTRAP*/", f"window.CPE_BAND_SCAN = {bootstrap};").encode(),
                    TYPES[".html"])
@@ -173,6 +175,8 @@ class Handler(BaseHTTPRequestHandler):
                                    "running": self.session.running(), "kind": self.session.kind})
             if path == "/api/runs":
                 return self._json({"runs": store.list_runs()})
+            if path == "/api/profiles":
+                return self._json({"profiles": store.list_profiles()})
             if path.startswith("/api/runs/"):
                 try:
                     return self._json({"run": store.load(unquote(path.split("/")[3]))})
@@ -196,13 +200,40 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/connect":
                 with self.session.lock:
                     self.session.require_idle()
-                    device = self.session.connect(body.get("url") or DEFAULT_URL,
-                                                  body.get("password") or "",
+                    password = body.get("password") or store.remembered_password()
+                    device = self.session.connect(body.get("url") or DEFAULT_URL, password,
                                                   body.get("username") or "admin")
                     store.save_settings(router_url=self.session.router.url,
                                         username=body.get("username") or "admin")
+                    if "remember" in body:                  # the page decides; absent means keep as is
+                        store.remember_password(password if body["remember"] else None)
                 return self._json({"device": device.as_dict(),
                                    "suggested_name": store.default_name(device.carrier)})
+            if path == "/api/forget":
+                store.remember_password(None)
+                return self._json({"remembered": False})
+            if path == "/api/profiles":
+                router = self.session.require_router()
+                profile = store.save_profile(body.get("name") or "", self.session.device.carrier,
+                                             lockfreq.read_lock(router))
+                return self._json({"profile": profile})
+            if path.startswith("/api/profiles/") and path.endswith("/rename"):
+                try:
+                    return self._json({"profile": store.rename_profile(unquote(path.split("/")[3]),
+                                                                       body.get("name") or "")})
+                except KeyError:
+                    return self._json({"error": "not_found"}, 404)
+            if path.startswith("/api/profiles/") and path.endswith("/apply"):
+                try:
+                    profile = store.load_profile(unquote(path.split("/")[3]))
+                except KeyError:
+                    return self._json({"error": "not_found"}, 404)
+                lock = profile["lock"]
+                with self.session.lock:
+                    self.session.require_idle()
+                    lockfreq.lock(self.session.require_router(), lte=lock["lte"][0], lte_scell=lock["lte"][1],
+                                  nr=lock["nr"][0], nr_scell=lock["nr"][1])
+                return self._json({"applied": True})
             if path == "/api/scan":
                 router, device = self.session.require_router(), self.session.device
                 sides = tuple(body.get("sides") or ("lte", "nr"))
@@ -259,12 +290,14 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_DELETE(self):
         path = urlparse(self.path).path
-        if not path.startswith("/api/runs/"):
+        remove = {"/api/runs/": store.delete, "/api/profiles/": store.delete_profile}
+        prefix = next((known for known in remove if path.startswith(known)), None)
+        if prefix is None:
             return self._json({"error": "not_found"}, 404)
         if not self._allowed():
             return
         try:
-            store.delete(unquote(path.split("/")[3]))
+            remove[prefix](unquote(path.split("/")[3]))
             return self._json({"deleted": True})
         except KeyError:
             self._json({"error": "not_found"}, 404)

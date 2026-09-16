@@ -137,7 +137,7 @@ def _print_help() -> int:
             ("apply <bands>", copy.ACTIONS["apply"]["help"]),
             ("clear", copy.ACTIONS["clear"]["help"]),
             ("runs", copy.NOTES["runs_command"]),
-            ("show <id>", copy.ACTIONS["open_run"]["help"])]
+            ("show <id>", copy.NOTES["show_command"])]
     width = max(len(name) for name, _ in rows)
     for name, description in rows:
         print(f"  {name:<{width}}  {description}")
