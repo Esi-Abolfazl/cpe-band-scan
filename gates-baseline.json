@@ -1,18 +1,1 @@
-{
-  "literal-routes-in-tests": {
-    "rule": "tst-04",
-    "pattern": "[\"']/api/",
-    "files": [
-      "tests/*.py"
-    ],
-    "count": 71
-  },
-  "route-literals-in-page": {
-    "rule": "llm-01",
-    "pattern": "[\"'`]/api/",
-    "files": [
-      "src/cpe_band_scan/web/app.js"
-    ],
-    "count": 16
-  }
-}
+{}
