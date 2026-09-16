@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cpe-band-scan"
+version = "0.1.0"
+description = "Find and lock the steadiest LTE/NR band on a Huawei CPE router"
+requires-python = ">=3.10"
+dependencies = ["huawei-lte-api>=1.7"]
+
+[project.scripts]
+cpe-band-scan = "cpe_band_scan.cli:main"
+cpescan = "cpe_band_scan.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools.package-data]
+cpe_band_scan = ["web/*"]
