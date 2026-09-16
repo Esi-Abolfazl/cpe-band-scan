@@ -47,32 +47,26 @@ in `.python-version`, Node (the `check-repo` runner only) in `.nvmrc`.
 
 ## Baseline
 
-Adopted on 2026-09-16 with these rules violated; counts in `gates-baseline.json`, rows in
-`docs/adoption-scorecard.md`. **New code follows the rule; existing violations burn down per the
-scorecard.** A gate at baseline may not gain a new hit: `scripts/check_baseline.py` fails the PR
-that adds one. When a count reaches zero, remove its exemption from `llmfw.config.json` in the same
-change.
-
-| Rule | Count | Where |
-| --- | --- | --- |
-| `tst-04`, `llm-01` literal routes | 71 in tests, 16 in the page | `tests/test_server*.py`, `tests/test_end_to_end.py`, `web/app.js` |
-| `llm-06` files over 300 lines | 3 | `server.py`, `web/app.js`, `tests/test_scanner.py` |
-| `llm-12` env reads outside one module | 4 | `store.py`, `cli.py` |
-| `err-06` swallowed failures | 3 | `metrics.py:106`, `speed.py:95`, `speed.py:129` |
-| `llm-03` barrel | 1 | `src/cpe_band_scan/__init__.py` |
-| `vc-09` machine paths | 2 files | `docs/superpowers/plans/` |
+Adopted on 2026-09-16 with six rules violated; every row burned down on 2026-09-17
+(`docs/adoption-scorecard.md` § Burn-down). `gates-baseline.json` is empty and every rule it held is
+now enforced by `check-repo` with no exemption. **The ratchet stays:** a rule the repo starts
+violating again is baselined there, never exempted silently, and `scripts/check_baseline.py` fails
+the PR that grows a count. The one remaining exemption is the framework's own
+`scripts/check-repo.mjs` under `file-size`.
 
 ## Always
 
 - Load `docs/CONSTITUTION.md` plus the routed rule files before touching code.
 - A new use case copies `src/cpe_band_scan/device.py` (`py-01`); its test is `tests/test_<module>.py`.
+- A new `/api` route is one line in `api.ROUTES`, one handler, one line in `api.HANDLERS` (`vs-06`);
+  the page reaches it as `routes.<name>`, a test as `ROUTES["<name>"]`.
 - Every user-facing word goes through `copy.py` (`py-03`); every failure is a `RouterError(code)`
   with a catalogue line (`py-02`).
 - A term new to the product lands in `CONTEXT.md` in the same change (`llm-09`).
 - Out-of-scope bug or debt found mid-task → a handoff file (`## Agent sessions`), never an inline
   fix and never a native task proposal.
 - Assume parallel agent sessions: the server already walks ports `8765..8774`
-  (`server.py:341`); tests use `port=0`.
+  (`server.py:216`); tests use `port=0`.
 
 ## Ask first
 
@@ -80,7 +74,7 @@ change.
   `.agents/handoffs/2026-09-16-ruff-lint-format-gate.md` and not yet approved.
 - A new top-level module in `src/cpe_band_scan/` or a new contracts door (`vs-03`, `vs-04`).
 - A new ADR.
-- Renaming a `RouterError` code, an `/api/*` route or a copy key — all three are wire contracts
+- Renaming a `RouterError` code, an `api.ROUTES` entry or a copy key — all three are wire contracts
   between server, page and terminal (`py-02`, `tst-04`).
 - Rewriting already-pushed history (`vc-03`).
 - Anything that writes to the router outside `lockfreq.lock` and `Router.post`.
@@ -90,8 +84,8 @@ change.
 - Edit generated output by hand (`llm-08`) — there is none yet; a codegen adds `generatedPaths`
   to `llmfw.config.json` first.
 - Barrels, grab-bag files, reflection scans (`llm-02`, `llm-03`, `llm-04`).
-- A new literal route string in a test (`tst-04`) — the baseline count may only fall.
-- Read config/env outside `store.py`/`cli.py` today, outside `config.py` once it exists (`llm-12`).
+- A literal `/api/…` string anywhere but `api.ROUTES` (`llm-01`, `tst-04`).
+- Read config/env outside `config.py` (`llm-12`).
 - Swallow a failure (`err-06`).
 - Put the router password on a command line, in a log line or in a test fixture committed to git.
 - Push `main` directly from an agent session (`vc-08`).

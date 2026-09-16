@@ -1,5 +1,5 @@
 ---
-status: open
+status: done
 area: docs
 date: 2026-09-16
 origin: none — found during llmfw adoption Phase 0 (docs/adoption-scorecard.md, vc-09 and doc-01 rows)

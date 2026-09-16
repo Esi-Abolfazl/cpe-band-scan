@@ -16,6 +16,7 @@ Introducing, renaming or retiring a term updates this file in the **same change*
 | Measurement | One band's summary over its samples: lowest, typical, channel, strength, 5G kept. | `metrics.measure`, `summarise` | reading, stats |
 | Profile | A named lock saved on this computer for one carrier or place. | `store.profiles` | preset, bookmark |
 | Rating | The grade a measurement earns: excellent, good, fair, poor, no5g. | `metrics.grade`, `copy.GRADES` | score, verdict |
+| Route | One `/api` path, named once in the route table; server, page and tests use the name. | `api.ROUTES[name]`, `routes.<name>` in the page | endpoint, URL, path literal |
 | Router | The Huawei CPE reached over its LAN admin API; the only door to it is one class. | `Router` (`router.py:46`) | modem, gateway, device |
 | RouterError code | The `snake_case` key naming one failure, and the key of its sentence in copy. | `RouterError.code`, `copy.ERRORS` | error message, exception text |
 | Run | One finished scan: sets, results, order, verdict; saved as one JSON file. | `store.runs_dir`, `RUN_ID` | scan result, report |
