@@ -8,8 +8,7 @@ from tests.test_server import call, fake_router_factory, live  # noqa: F401
 
 
 @pytest.fixture(autouse=True)
-def home(tmp_path, monkeypatch):
-    monkeypatch.setenv("CPE_BAND_SCAN_HOME", str(tmp_path))
+def fast(monkeypatch):
     monkeypatch.setattr(server.scanner, "SETTLE", 0)
     monkeypatch.setattr(server, "SLEEP", lambda seconds: None)
 

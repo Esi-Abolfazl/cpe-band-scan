@@ -6,14 +6,13 @@ import pytest
 from cpe_band_scan import store
 
 
-@pytest.fixture(autouse=True)
-def home(tmp_path, monkeypatch):
-    monkeypatch.setenv("CPE_BAND_SCAN_HOME", str(tmp_path))
-    return tmp_path
-
-
 RUN = {"kind": "scan", "device": {"carrier": "MCI", "model": "H155-381"},
        "sides": {"lte": {"order": ["B7", "B40"], "results": {"B7": {"floor": 7}}}}}
+
+
+@pytest.fixture
+def home(isolated_home, tmp_path):
+    return tmp_path
 
 
 def test_the_default_name_uses_the_carrier_and_the_date():

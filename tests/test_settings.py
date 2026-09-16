@@ -3,9 +3,8 @@ import pytest
 from cpe_band_scan import store
 
 
-@pytest.fixture(autouse=True)
-def home(tmp_path, monkeypatch):
-    monkeypatch.setenv("CPE_BAND_SCAN_HOME", str(tmp_path))
+@pytest.fixture
+def home(tmp_path):
     return tmp_path
 
 

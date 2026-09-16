@@ -7,11 +7,6 @@ RUN = {"kind": "scan", "device": {"carrier": "MCI"},
                          "skipped": {}}}}
 
 
-@pytest.fixture(autouse=True)
-def home(tmp_path, monkeypatch):
-    monkeypatch.setenv("CPE_BAND_SCAN_HOME", str(tmp_path))
-
-
 def test_an_empty_list_is_an_empty_list_not_an_error(live):
     session, port = live
     status, body = call(port, "GET", "/api/runs", token=session.token)
