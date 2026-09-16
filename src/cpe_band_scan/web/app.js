@@ -1,5 +1,5 @@
 "use strict";
-const { token, copy, defaults } = window.CPE_BAND_SCAN;
+const { token, copy, defaults, routes } = window.CPE_BAND_SCAN;
 
 const state = {
   device: null, status: null, profiles: [], run: null, results: null, suggestedName: "", profileName: null,
@@ -19,6 +19,10 @@ const MAX_POLL_FAILURES = 3;   // consecutive failed polls before we treat the s
 const SCOPES = { all: ["lte", "nr"], lte: ["lte"], nr: ["nr"] };
 
 // ---- plumbing --------------------------------------------------------------
+function route(name, id) {
+  return routes[name].replace("{id}", encodeURIComponent(id));
+}
+
 async function api(method, path, body) {
   const response = await fetch(path, {
     method,
@@ -146,7 +150,7 @@ function renderConnect() {
 
 async function onForget() {
   try {
-    await api("POST", "/api/forget", {});
+    await api("POST", routes.forget, {});
     defaults.remembered = false;
   } catch (failure) {
     showError(failure.message);
@@ -163,7 +167,7 @@ async function onConnect() {
   const body = { url: document.getElementById("router_url").value };
   if (password) { body.password = password.value; body.remember = state.remember; }
   try {
-    const answer = await api("POST", "/api/connect", body);
+    const answer = await api("POST", routes.connect, body);
     state.device = answer.device;
     state.suggestedName = answer.suggested_name;
     if (password && state.remember) defaults.remembered = true;
@@ -180,7 +184,7 @@ async function onConnect() {
 
 async function refreshStatus() {
   try {
-    state.status = await api("GET", "/api/status");
+    state.status = await api("GET", routes.status);
     state.running = state.status.running;
   } catch (failure) {
     showError(failure.message);
@@ -252,7 +256,7 @@ function lockCard() {
 
 async function onClear() {
   try {
-    await api("POST", "/api/clear", {});
+    await api("POST", routes.clear, {});
     await refreshStatus();
   } catch (failure) {
     showError(failure.message);
@@ -482,7 +486,7 @@ async function onScan(sides) {
   state.events = []; state.since = 0; state.run = null; state.pollFailures = 0;
   state.applyFailed = null;
   try {
-    await api("POST", "/api/scan", { sides, speed: state.speedTest });
+    await api("POST", routes.scan, { sides, speed: state.speedTest });
     state.running = true;
     state.kind = "scan";
     state.live = buildScanLive(sides);
@@ -495,11 +499,11 @@ async function onScan(sides) {
 }
 
 async function onCancel() {
-  try { await api("POST", "/api/cancel", {}); } catch (failure) { showError(failure.message); }
+  try { await api("POST", routes.cancel, {}); } catch (failure) { showError(failure.message); }
 }
 
 async function poll() {
-  const answer = await api("GET", `/api/events?since=${state.since}`).catch(() => null);
+  const answer = await api("GET", `${routes.events}?since=${state.since}`).catch(() => null);
   if (answer) {
     state.pollFailures = 0;
     state.since = answer.since;
@@ -618,7 +622,7 @@ async function onApply(side, record, name) {
     : record.order.filter((other) => other !== name).flatMap((other) => record.sets[other]);
   const payload = side === "nr" ? { nr: chosen } : { lte: chosen, scell: others };
   try {
-    await api("POST", "/api/apply", payload);
+    await api("POST", routes.apply, payload);
     await refreshStatus();
   } catch (failure) {
     state.applyFailed = { side, name, message: failure.message };
@@ -748,7 +752,7 @@ async function onTest() {
   }
   state.events = []; state.since = 0; state.run = null; state.pollFailures = 0;
   try {
-    await api("POST", "/api/test", body);
+    await api("POST", routes.test, body);
     state.running = true;
     state.kind = "test";
     state.live = buildTestLive(seconds, testWhat());
@@ -814,13 +818,13 @@ function profilesCard() {
 }
 
 async function refreshProfiles() {
-  try { state.profiles = (await api("GET", "/api/profiles")).profiles; } catch { state.profiles = []; }
+  try { state.profiles = (await api("GET", routes.profiles)).profiles; } catch { state.profiles = []; }
 }
 
 async function onSaveProfile() {
   showError(null);
   try {
-    await api("POST", "/api/profiles", { name: document.getElementById("profile_name").value });
+    await api("POST", routes.profiles, { name: document.getElementById("profile_name").value });
     state.profileName = null;
     await refreshProfiles();
   } catch (failure) {
@@ -834,7 +838,7 @@ async function onApplyProfile(profile) {
   state.applying = { profile: profile.id };
   render();
   try {
-    await api("POST", `/api/profiles/${profile.id}/apply`, {});
+    await api("POST", route("profile_apply", profile.id), {});
     await refreshStatus();
   } catch (failure) {
     showError(failure.message);
@@ -851,7 +855,7 @@ function stopEditing() {
 async function onRenameProfile(profile) {
   const name = state.editing ? state.editing.name : profile.name;
   try {
-    await api("POST", `/api/profiles/${profile.id}/rename`, { name });
+    await api("POST", route("profile_rename", profile.id), { name });
     await refreshProfiles();
   } catch (failure) {
     showError(failure.message);
@@ -867,7 +871,7 @@ async function onDeleteProfile(profile) {
     return;
   }
   try {
-    await api("DELETE", `/api/profiles/${profile.id}`);
+    await api("DELETE", route("profile", profile.id));
     await refreshProfiles();
   } catch (failure) {
     showError(failure.message);
@@ -902,13 +906,13 @@ function render() {
 }
 
 async function resume() {
-  const status = await api("GET", "/api/status").catch(() => null);
+  const status = await api("GET", routes.status).catch(() => null);
   if (!status) return render();               // not connected yet: the connect screen is correct
   state.device = status.device;
   state.status = status;
   state.suggestedName = status.suggested_name || "";
   await refreshProfiles();
-  const answer = await api("GET", "/api/events?since=0").catch(() => null);
+  const answer = await api("GET", `${routes.events}?since=0`).catch(() => null);
   if (answer) {
     state.since = answer.since;
     state.events = answer.events;

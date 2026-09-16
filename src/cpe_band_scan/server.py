@@ -12,13 +12,12 @@ import json
 import secrets
 import socketserver
 import threading
-import time
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs, urlparse
 
-from . import copy, lockfreq, metrics, scanner, speed, store
+from . import api, copy, scanner, speed, store
 from .config import DEFAULT_URL
 from .device import probe
 from .router import Router, RouterError, host
@@ -40,13 +39,10 @@ def finite(value):
     return value
 
 
-SLEEP = time.sleep    # real between-band and between-sample waits; read at call time so
-                      # tests can swap in a no-op instead of waiting out real settle/gap delays
 SETTLE_GRACE = scanner.PER_SET + speed.DURATION + 5   # worst case: cancel lands just as a band's
                                      # settle-and-measure window starts, including the probe's own
                                      # window; give the job's finally block that long to clear the
                                      # lock and restore automatic mode
-PROBE = speed.SpeedProbe   # built per scan for the connected router; the demo swaps in a fake
 
 
 def _default_router(url, password, username="admin"):
@@ -156,7 +152,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _page(self):
         saved = store.settings()
-        bootstrap = json.dumps({"token": self.session.token, "copy": copy.bundle(),
+        bootstrap = json.dumps({"token": self.session.token, "copy": copy.bundle(), "routes": api.ROUTES,
                                 "defaults": {"url": host(saved.get("router_url", DEFAULT_URL)),
                                              "remembered": bool(saved.get("password"))}})
         html = (WEB / "index.html").read_text(encoding="utf-8")
@@ -165,160 +161,39 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = urlparse(self.path).path
-        if path in ("/", "/index.html", "/app.js", "/style.css"):
+        asset = WEB / path.lstrip("/")
+        if path in ("/", "/index.html") or (asset.parent == WEB and asset.suffix in TYPES and asset.is_file()):
             if not self._host_allowed():
                 return
             if path in ("/", "/index.html"):
                 return self._page()
-            asset = WEB / path.lstrip("/")
             return self._send(200, asset.read_bytes(), TYPES[asset.suffix])
-        if not path.startswith("/api/") or not self._allowed():
-            return
-        try:
-            if path == "/api/status":
-                router = self.session.require_router()
-                return self._json({"device": self.session.device.as_dict(),
-                                   "lock": lockfreq.read_lock(router),
-                                   "signal": metrics.sample(router),
-                                   "visible": metrics.visible_bands(router),
-                                   "running": self.session.running(),
-                                   "suggested_name": store.default_name(self.session.device.carrier)})
-            if path == "/api/events":
-                since = max(0, int(parse_qs(urlparse(self.path).query).get("since", ["0"])[0]))
-                events = self.session.events[since:]
-                return self._json({"since": since + len(events), "events": events,
-                                   "running": self.session.running(), "kind": self.session.kind})
-            if path == "/api/runs":
-                return self._json({"runs": store.list_runs()})
-            if path == "/api/profiles":
-                return self._json({"profiles": store.list_profiles()})
-            if path.startswith("/api/runs/"):
-                try:
-                    return self._json({"run": store.load(unquote(path.split("/")[3]))})
-                except KeyError:
-                    return self._json({"error": "not_found"}, 404)
-        except RouterError as error:
-            return self._fail(error.code, detail=error.detail,
-                              url=getattr(self.session.router, "url", ""))
-        except ValueError as error:
-            return self._fail("bad_request", 400, detail=str(error))
-        self._json({"error": "not_found"}, 404)
+        self._dispatch("GET")
 
     def do_POST(self):
-        path = urlparse(self.path).path
-        if not path.startswith("/api/"):
-            return self._json({"error": "not_found"}, 404)
-        if not self._allowed():
-            return
-        body = self._body()
-        try:
-            if path == "/api/connect":
-                with self.session.lock:
-                    self.session.require_idle()
-                    password = body.get("password") or store.remembered_password()
-                    device = self.session.connect(body.get("url") or DEFAULT_URL, password,
-                                                  body.get("username") or "admin")
-                    store.save_settings(router_url=self.session.router.url,
-                                        username=body.get("username") or "admin")
-                    if "remember" in body:                  # the page decides; absent means keep as is
-                        store.remember_password(password if body["remember"] else None)
-                return self._json({"device": device.as_dict(),
-                                   "suggested_name": store.default_name(device.carrier)})
-            if path == "/api/forget":
-                store.remember_password(None)
-                return self._json({"remembered": False})
-            if path == "/api/profiles":
-                with self.session.lock:
-                    self.session.require_idle()              # mid-scan the lock is whatever band is under test
-                    router = self.session.require_router()
-                    profile = store.save_profile(body.get("name") or "", self.session.device.carrier,
-                                                 lockfreq.read_lock(router))
-                return self._json({"profile": profile})
-            if path.startswith("/api/profiles/") and path.endswith("/rename"):
-                try:
-                    return self._json({"profile": store.rename_profile(unquote(path.split("/")[3]),
-                                                                       body.get("name") or "")})
-                except KeyError:
-                    return self._json({"error": "not_found"}, 404)
-            if path.startswith("/api/profiles/") and path.endswith("/apply"):
-                try:
-                    profile = store.load_profile(unquote(path.split("/")[3]))
-                except KeyError:
-                    return self._json({"error": "not_found"}, 404)
-                lock = profile["lock"]
-                with self.session.lock:
-                    self.session.require_idle()
-                    lockfreq.lock(self.session.require_router(), lte=lock["lte"][0], lte_scell=lock["lte"][1],
-                                  nr=lock["nr"][0], nr_scell=lock["nr"][1])
-                return self._json({"applied": True})
-            if path == "/api/scan":
-                router, device = self.session.require_router(), self.session.device
-                sides = tuple(body.get("sides") or ("lte", "nr"))
-                if any(side not in scanner.SIDES for side in sides):
-                    raise ValueError(f"sides {sides!r}")
-                bands = lockfreq.bands_of(body.get("bands") or []) or None
-                probe = PROBE(router.url) if body.get("speed", True) is not False else None
-                self.session.start("scan", lambda cancelled: scanner.scan(
-                    router, device, sides=sides, bands=bands, cancelled=cancelled, sleep=SLEEP, probe=probe))
-                return self._json({"started": True})
-            if path == "/api/test":
-                router = self.session.require_router()
-                seconds = int(body["seconds"]) if "seconds" in body else 120
-                gap = int(body["gap"]) if "gap" in body else 10
-                if not 0 < gap <= seconds:
-                    raise ValueError(f"seconds={seconds} gap={gap}")
-                lte = lockfreq.bands_of(body.get("lte") or [])
-                nr = lockfreq.bands_of(body.get("nr") or [])
-                scell = lockfreq.bands_of(body.get("scell") or [])
-                self.session.start("test", lambda cancelled: scanner.trace(
-                    router, seconds=seconds, gap=gap, cancelled=cancelled, sleep=SLEEP,
-                    lte=lte, nr=nr, lte_scell=scell))
-                return self._json({"started": True})
-            if path == "/api/cancel":
-                self.session.cancel()
-                return self._json({"cancelling": True})
-            if path == "/api/apply":
-                with self.session.lock:
-                    self.session.require_idle()
-                    router = self.session.require_router()
-                    current = lockfreq.read_lock(router)     # an absent side keeps the lock it has
-                    lte = body["lte"] if "lte" in body else current["lte"][0]
-                    scell = body["scell"] if "scell" in body else current["lte"][1]
-                    nr = body["nr"] if "nr" in body else current["nr"][0]
-                    lockfreq.lock(router, lte=lte, lte_scell=scell, nr=nr)
-                return self._json({"applied": True})
-            if path == "/api/clear":
-                with self.session.lock:
-                    self.session.require_idle()
-                    lockfreq.lock(self.session.require_router())
-                return self._json({"applied": True})
-            if path == "/api/runs":
-                return self._json({"run": store.save(body.get("run") or {}, body.get("name"))})
-            if path.startswith("/api/runs/") and path.endswith("/rename"):
-                try:
-                    return self._json({"run": store.rename(unquote(path.split("/")[3]),
-                                                           body.get("name") or "")})
-                except KeyError:
-                    return self._json({"error": "not_found"}, 404)
-        except RouterError as error:
-            return self._fail(error.code, detail=error.detail, url=host(body.get("url") or DEFAULT_URL))
-        except ValueError as error:
-            return self._fail("bad_request", 400, detail=str(error))
-        self._json({"error": "not_found"}, 404)
+        self._dispatch("POST")
 
     def do_DELETE(self):
-        path = urlparse(self.path).path
-        remove = {"/api/runs/": store.delete, "/api/profiles/": store.delete_profile}
-        prefix = next((known for known in remove if path.startswith(known)), None)
-        if prefix is None:
+        self._dispatch("DELETE")
+
+    def _dispatch(self, method):
+        """Route → handler in api.HANDLERS; its exceptions become the HTTP answers."""
+        parsed = urlparse(self.path)
+        hit = api.match(parsed.path)
+        if hit is None or (method, hit[0]) not in api.HANDLERS:
             return self._json({"error": "not_found"}, 404)
         if not self._allowed():
             return
+        body = self._body() if method == "POST" else {}
         try:
-            remove[prefix](unquote(path.split("/")[3]))
-            return self._json({"deleted": True})
+            return self._json(api.HANDLERS[(method, hit[0])](self.session, body, hit[1], parse_qs(parsed.query)))
         except KeyError:
-            self._json({"error": "not_found"}, 404)
+            return self._json({"error": "not_found"}, 404)
+        except RouterError as error:
+            url = host(body.get("url") or DEFAULT_URL) if method == "POST" else getattr(self.session.router, "url", "")
+            return self._fail(error.code, detail=error.detail, url=url)
+        except ValueError as error:
+            return self._fail("bad_request", 400, detail=str(error))
 
 
 class LocalServer(ThreadingHTTPServer):

@@ -40,7 +40,6 @@
     "fileSize": {
       "maxLines": 300,
       "exempt": [
-        "src/cpe_band_scan/server.py",
         "src/cpe_band_scan/web/app.js",
         "tests/test_scanner.py",
         "scripts/check-repo.mjs"
@@ -85,12 +84,6 @@
       "id": "tst-04",
       "pattern": "[\"']/api/",
       "files": "^tests/.*\\.py$",
-      "exempt": [
-        "tests/test_end_to_end.py",
-        "tests/test_server.py",
-        "tests/test_server_jobs.py",
-        "tests/test_server_runs.py"
-      ],
       "message": "a test spells a route by its constant, never a literal"
     },
     {
@@ -104,6 +97,12 @@
       "pattern": "importlib\\.import_module\\(|pkgutil\\.iter_modules|__import__\\(",
       "files": "^src/.*\\.py$",
       "message": "no import scans — every registration is an explicit list"
+    },
+    {
+      "id": "llm-01",
+      "pattern": "/api/",
+      "files": "^src/cpe_band_scan/web/.*\\.js$",
+      "message": "the page reads routes from its bootstrap (api.ROUTES), never spells one"
     }
   ],
   "forbiddenPaths": [
