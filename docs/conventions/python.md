@@ -44,6 +44,8 @@ Tests substitute `huawei_lte_api.Connection` through `Router(connection_factory=
 | `py-02` | `tests/test_copy.py` (every raised code has a sentence) |
 | `py-03` | `tests/test_parity.py` |
 | `py-04` | `tests/conftest.py` fixture; review |
-| `llm-06`, `llm-12`, `tst-04`, `err-06`, `vc-09` | `scripts/check-repo.mjs` + `llmfw.config.json`; counts in `gates-baseline.json` via `scripts/check_baseline.py` |
+| `llm-01`, `llm-03`, `llm-04`, `llm-06`, `llm-10`, `llm-12`, `tst-04`, `err-06`, `vc-09` | `scripts/check-repo.mjs` + `llmfw.config.json`, no exemptions except the framework's own script |
+| `vs-06` (routes) | `api.HANDLERS` is the list; `tests/test_server_jobs.py` `test_the_write_endpoints_hold_the_session_lock` reads it |
+| a rule violated again | `gates-baseline.json` + `scripts/check_baseline.py` (empty today) |
 
-Version: 0.1.0
+Version: 0.2.0

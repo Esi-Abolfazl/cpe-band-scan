@@ -1,5 +1,27 @@
 # Adoption scorecard — cpe-band-scan vs. llm-friendly-framework 0.2.0
 
+## Burn-down, 2026-09-17
+
+Every baseline row below was retired one day after adoption, on branch `chore/burn-down-baseline`.
+The table and sections that follow are the 2026-09-16 audit, kept as the record of where the repo
+started.
+
+| Row | Retired by | Gate now |
+| --- | --- | --- |
+| Literal routes (`tst-04`, `llm-01`) | `api.ROUTES` + `api.HANDLERS`; page reads `routes` from the bootstrap; tests import `ROUTES` | `check-repo forbidden-patterns`, no exemption |
+| Files over 300 lines (`llm-06`) | `server.py` → `api.py` split; `web/app.js` → 8 page scripts; `tests/test_scanner.py` → 4 files + `tests/fake_scan_router.py` | `check-repo file-size`, only `scripts/check-repo.mjs` exempt |
+| Env reads (`llm-12`) | `config.py` | `check-repo forbidden-patterns`, `config.py` the one allowed file |
+| Machine paths (`vc-09`) | plans moved to `.agents/plans/`, paths scrubbed; spec and design ruling marked history under `docs/design/` | `check-repo forbidden-patterns`, no exemption |
+| Barrel (`llm-03`) | `__init__.py` empty; `tests/test_packaging.py` keeps it so | `check-repo forbidden-patterns` |
+| Swallowed failures (`err-06`) | each of the three sites carries `# boundary:` on its `except` line, which the pattern does not match | `check-repo forbidden-patterns` |
+
+Still open: `ruff` as lint+format gate (ask-first, `.agents/handoffs/2026-09-16-ruff-lint-format-gate.md`);
+slices per route and modules (Phase 3, deferred until `api.py` or a second product needs them —
+`ARCHITECTURE.md` § don't have yet); commit-msg hook (`vc-01`); the flaky fake download server
+(`.agents/handoffs/2026-09-17-flaky-fake-download-server.md`).
+
+## Audit, 2026-09-16
+
 Phase 0 audit, 2026-09-16, commit `317579a`, informed by `docs/adoption-discovery.md`. Counts come
 from `scripts/check-repo.mjs` run in report mode (scratch config, no exemptions) and from `grep`;
 the raw report tail is at the bottom. Nothing was fixed in this step. Every exemption in

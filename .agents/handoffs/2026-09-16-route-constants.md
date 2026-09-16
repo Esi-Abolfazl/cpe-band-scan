@@ -1,5 +1,5 @@
 ---
-status: open
+status: done
 area: src/cpe_band_scan, tests
 date: 2026-09-16
 origin: none — found during llmfw adoption Phase 0 (docs/adoption-scorecard.md, gap 1)

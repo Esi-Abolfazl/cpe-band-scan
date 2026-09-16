@@ -1,5 +1,5 @@
 ---
-status: open
+status: done
 area: src/cpe_band_scan, tests
 date: 2026-09-16
 origin: none — found during llmfw adoption Phase 0 (docs/adoption-scorecard.md, gaps 2 and 3)
@@ -33,6 +33,12 @@ a different cut; do them as three PRs, `server.py` first because it seeds Phase 
 - `tests/test_scanner.py`: split by the function under test — `test_scanner_scan.py`,
   `test_scanner_trace.py`, `test_scanner_choose.py`; shared fakes stay in `tests/fakes.py`.
 - Each PR removes its file from `source.fileSize.exempt` in `llmfw.config.json`.
+
+## Outcome (2026-09-17)
+
+`server.py` was split into transport (`server.py`) and one `api.py` holding every handler plus
+the `ROUTES`/`HANDLERS` lists, not one file per route: 16 handlers fit in 200 lines. The per-route
+split is the next cut when `api.py` crosses 300 (`ARCHITECTURE.md` § don't have yet).
 
 ## Acceptance
 
