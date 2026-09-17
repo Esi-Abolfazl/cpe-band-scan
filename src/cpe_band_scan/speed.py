@@ -33,6 +33,7 @@ SECONDS = 5                   # the download window; a slow link ends it with fe
 PINGS = 5
 TIMEOUT = 8
 DURATION = 12                 # the most one band's probe may take: measure() stops at this wall-clock bound
+TRIES = 3                     # start() attempts before "blocked" sticks for the whole scan
 PUBLIC_DNS = "1.1.1.1"
 VERDICTS = ("not_needed", "confirmed", "failed", "blocked")
 FAILURES = (OSError, http.client.HTTPException, ValueError)
@@ -221,7 +222,7 @@ def download(route: Route, ip: str, deadline: float | None = None) -> dict:
     return {"mbps": round(count * 8 / max(seconds, 1e-9) / 1e6, 1), "bytes": count, "seconds": round(seconds, 3)}
 
 
-def public_ip(route: Route | None) -> str:
+def public_ip(route: Route | None, deadline: float | None = None) -> str:
     """The address the internet sees this computer as: through `route` when given, through
     the default path (the VPN, when one is up) when None."""
     if route is None:
@@ -232,8 +233,8 @@ def public_ip(route: Route | None) -> str:
             sock.close()
             raise
     else:
-        sock = connect(route, resolve(HOST, route))
-    body, _, _ = _get(sock, TRACE)
+        sock = connect(route, resolve(HOST, route, deadline=deadline), deadline)
+    body, _, _ = _get(sock, TRACE, deadline=deadline)
     for line in body.decode(errors="replace").splitlines():
         if line.startswith("ip="):
             return line[3:].strip()
@@ -250,12 +251,23 @@ class SpeedProbe:
         self.bypass = "blocked"
 
     def start(self) -> dict:
+        """The verdict is sticky for the whole scan, so one hiccup at the moment the scan
+        starts (a VPN reconnecting, a slow trace) must not silence every band: a "blocked"
+        attempt is retried TRIES times, each bounded by DURATION."""
+        for _ in range(TRIES):
+            report = self._attempt()
+            if report["bypass"] != "blocked":
+                break
+        return report
+
+    def _attempt(self) -> dict:
         lan_public = ""
+        deadline = time.monotonic() + DURATION
         try:
             self.route = lan_route(self.router_ip)
             default_ip = source_ip(PUBLIC_DNS)
             try:
-                lan_public = public_ip(self.route)
+                lan_public = public_ip(self.route, deadline)
             except FAILURES:
                 lan_public = ""
             default_public = None

@@ -115,6 +115,10 @@ default route and tells the person which of four cases they are in:
 | `failed` | a tunnel is up and both addresses are the same | the VPN couldn't be bypassed; the numbers include it; compare rows with each other |
 | `blocked` | a tunnel is up and nothing answers outside it | the VPN blocks traffic outside itself; speed and ping were not measured; allow local network access or untick |
 
+The verdict is decided once per scan, so `blocked` is only declared after `speed.TRIES` (3) attempts,
+each bounded by `speed.DURATION`: one failed trace at the moment the scan starts (2026-09-18, a VPN
+reconnecting) must not silence speed and ping for the whole run.
+
 The skill rule "never ask the user to disconnect a VPN" stands: the bypass makes disconnecting unnecessary,
 and the `blocked` sentence offers the VPN's local-network setting or unticking the probe, never turning
 the VPN off.

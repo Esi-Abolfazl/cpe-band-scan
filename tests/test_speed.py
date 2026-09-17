@@ -191,6 +191,30 @@ def test_a_band_whose_probe_fails_reports_no_answer_not_a_crash(speed_host, monk
     assert probe.measure() == {"error": "no_answer"}
 
 
+def test_start_retries_a_hiccup_before_calling_the_path_blocked(speed_host, monkeypatch):
+    """2026-09-18: a real scan reported "blocked" and showed no speed for 25 minutes while the
+    same probe, run by hand a minute later, confirmed the bypass at 61 Mbit/s."""
+    monkeypatch.setattr(speed, "resolve", lambda host, route, servers=None, deadline=None: "127.0.0.1")
+    monkeypatch.setattr(speed, "source_ip", lambda target: "198.18.0.1" if target == speed.PUBLIC_DNS else "127.0.0.1")
+    real, calls = speed.public_ip, []
+    def flaky(route, deadline=None):
+        calls.append(route)
+        if len(calls) == 1:
+            raise OSError("the trace timed out this once")
+        return real(route, deadline)
+    monkeypatch.setattr(speed, "public_ip", flaky)
+    report = speed.SpeedProbe("http://127.0.0.1/").start()
+    assert report["bypass"] != "blocked" and report["public_ip"] == "127.0.0.1"
+    assert [c.lan_ip for c in calls[:2]] == ["127.0.0.1", "127.0.0.1"]   # the LAN path was asked again
+
+
+def test_a_blocked_probe_gives_up_after_its_tries(monkeypatch):
+    calls = []
+    monkeypatch.setattr(speed, "lan_route", lambda router_ip: calls.append(router_ip) or (_ for _ in ()).throw(OSError("no route")))
+    assert speed.SpeedProbe("http://192.0.2.1/").start()["bypass"] == "blocked"
+    assert len(calls) == speed.TRIES
+
+
 def test_a_blocked_probe_never_opens_a_socket_per_band(monkeypatch):
     monkeypatch.setattr(speed, "lan_route", lambda router_ip: (_ for _ in ()).throw(OSError("no route")))
     probe = speed.SpeedProbe("http://192.0.2.1/")
