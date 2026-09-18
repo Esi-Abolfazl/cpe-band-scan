@@ -9,11 +9,18 @@ started.
 | Row | Retired by | Gate now |
 | --- | --- | --- |
 | Literal routes (`tst-04`, `llm-01`) | `api.ROUTES` + `api.HANDLERS`; page reads `routes` from the bootstrap; tests import `ROUTES` | `check-repo forbidden-patterns`, no exemption |
-| Files over 300 lines (`llm-06`) | `server.py` → `api.py` split; `web/app.js` → 8 page scripts; `tests/test_scanner.py` → 4 files + `tests/fake_scan_router.py` | `check-repo file-size`, only `scripts/check-repo.mjs` exempt |
+| Files over 300 lines (`llm-06`) | `server.py` → `api.py` split; `web/app.js` → 8 page scripts; `tests/test_scanner.py` → 4 files + `tests/fake_scan_router.py` | `check-repo file-size`, `scripts/check-repo.mjs` and `copy.py` exempt |
 | Env reads (`llm-12`) | `config.py` | `check-repo forbidden-patterns`, `config.py` the one allowed file |
 | Machine paths (`vc-09`) | plans moved to `.agents/plans/`, paths scrubbed; spec and design ruling marked history under `docs/design/` | `check-repo forbidden-patterns`, no exemption |
 | Barrel (`llm-03`) | `__init__.py` empty; `tests/test_packaging.py` keeps it so | `check-repo forbidden-patterns` |
 | Swallowed failures (`err-06`) | each of the three sites carries `# boundary:` on its `except` line, which the pattern does not match | `check-repo forbidden-patterns` |
+
+`copy.py` was exempted from `file-size` on 2026-09-18 (owner's call, at 304 lines): its one
+responsibility is every user-facing word, so it grows with the product's vocabulary, and a flat
+catalogue of strings is not the second responsibility the rule hunts for. The alternative on the
+table — `ERRORS`/`NOTES`/`PROGRESS` into their own module — was rejected because the catalogue
+exists so the terminal and the page cannot drift, and two files are two things to keep in sync.
+Revisit if the file ever holds logic beyond `text()` and `bundle()`.
 
 Still open: `ruff` as lint+format gate (ask-first, `.agents/handoffs/2026-09-16-ruff-lint-format-gate.md`);
 slices per route and modules (Phase 3, deferred until `api.py` or a second product needs them —

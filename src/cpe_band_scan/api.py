@@ -6,7 +6,7 @@ from __future__ import annotations
 import time
 from urllib.parse import unquote
 
-from . import lockfreq, metrics, scanner, speed, store
+from . import config, lockfreq, metrics, scanner, speed, store
 from .config import DEFAULT_URL
 
 ROUTES = {
@@ -65,8 +65,9 @@ def connect(session, body, id, query):
     with session.lock:
         session.require_idle()
         password = body.get("password") or store.remembered_password()
-        device = session.connect(body.get("url") or DEFAULT_URL, password, body.get("username") or "admin")
-        store.save_settings(router_url=session.router.url, username=body.get("username") or "admin")
+        username = body.get("username") or config.username()
+        device = session.connect(body.get("url") or DEFAULT_URL, password, username)
+        store.save_settings(router_url=session.router.url, username=username)
         if "remember" in body:                  # the page decides; absent means keep as is
             store.remember_password(password if body["remember"] else None)
     return {"device": device.as_dict(), "suggested_name": store.default_name(device.carrier)}

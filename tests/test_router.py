@@ -37,6 +37,27 @@ def test_wrong_password_is_reported_as_bad_password():
     assert caught.value.code == "bad_password"
 
 
+def test_the_rejected_login_carries_the_routers_own_code():
+    """108001 (username), 108002 (password) and 108006 (both) all read as one sentence, so the
+    code the router sent is the only way back to which of the three it was."""
+    router = Router("192.168.8.1", "pw",
+                    connection_factory=factory(connect_error=hx.LoginErrorUsernameWrongException(
+                        "108001: Username wrong", 108001)))
+    with pytest.raises(RouterError) as caught:
+        router.get("device/signal")
+    assert "108001" in caught.value.detail
+
+
+def test_a_blank_password_is_refused_before_the_router_is_called():
+    def explode(*args, **kwargs):
+        raise AssertionError("a blank password reached the router")
+
+    router = Router("192.168.8.1", "", connection_factory=explode)
+    with pytest.raises(RouterError) as caught:
+        router.get("device/signal")
+    assert caught.value.code == "no_password"
+
+
 def test_too_many_attempts_is_reported_as_locked_out():
     router = Router("192.168.8.1", "pw",
                     connection_factory=factory(connect_error=hx.LoginErrorUsernamePasswordOverrunException("no", 108002)))

@@ -36,10 +36,13 @@ cpe-band-scan ui --port 9000 --no-browser
 
 ### Connect
 
-Two fields:
+Three fields:
 
 - **Router address**: `192.168.8.1` for most Huawei routers, `192.168.1.1` for some. The app
   remembers the one that worked.
+- **Admin username**: `admin`, which is right even when the router's own login page asks only for a
+  password. Change it only if your router has its own username box with a different name in it. The
+  app remembers the one that worked.
 - **Admin password**: the router's admin page password, not the Wi-Fi password. By default it stays
   in memory while the app runs and is never written anywhere. Tick **Remember the password on this
   computer** and you won't type it next time: it goes into the app's settings file, readable by

@@ -17,7 +17,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from . import api, copy, scanner, speed, store
+from . import api, config, copy, scanner, speed, store
 from .config import DEFAULT_URL
 from .device import probe
 from .router import Router, RouterError, host
@@ -45,7 +45,7 @@ SETTLE_GRACE = scanner.PER_SET + speed.DURATION + 5   # worst case: cancel lands
                                      # lock and restore automatic mode
 
 
-def _default_router(url, password, username="admin"):
+def _default_router(url, password, username):
     return Router(url, password, username=username)
 
 
@@ -63,7 +63,7 @@ class Session:
         self.thread = None
         self.cancelled = False
 
-    def connect(self, url, password, username="admin"):
+    def connect(self, url, password, username):
         router = self._router_factory(url or DEFAULT_URL, password, username)
         self.device = probe(router)          # raises RouterError carrying the reason
         self.router = router
@@ -154,6 +154,7 @@ class Handler(BaseHTTPRequestHandler):
         saved = store.settings()
         bootstrap = json.dumps({"token": self.session.token, "copy": copy.bundle(), "routes": api.ROUTES,
                                 "defaults": {"url": host(saved.get("router_url", DEFAULT_URL)),
+                                             "username": saved.get("username") or config.username(),
                                              "remembered": bool(saved.get("password"))}})
         html = (WEB / "index.html").read_text(encoding="utf-8")
         self._send(200, html.replace("/*BOOTSTRAP*/", f"window.CPE_BAND_SCAN = {bootstrap};").encode(),

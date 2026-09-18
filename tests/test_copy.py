@@ -79,7 +79,7 @@ def test_text_never_explodes_on_a_missing_placeholder():
 
 @pytest.mark.parametrize("code", ["unreachable", "not_huawei_api", "bad_password", "locked_out",
                                   "firmware_not_supported", "no_band_lock", "api_refused",
-                                  "busy", "not_connected", "crash",
+                                  "busy", "not_connected", "crash", "no_password",
                                   "bad_request"])
 def test_every_failure_the_engine_can_raise_has_a_message(code):
     assert copy.ERRORS[code]

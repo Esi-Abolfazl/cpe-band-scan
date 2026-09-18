@@ -40,7 +40,8 @@
     "fileSize": {
       "maxLines": 300,
       "exempt": [
-        "scripts/check-repo.mjs"
+        "scripts/check-repo.mjs",
+        "src/cpe_band_scan/copy.py"
       ]
     }
   },

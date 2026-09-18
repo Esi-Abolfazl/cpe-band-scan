@@ -9,6 +9,9 @@ function renderConnect() {
     el("div", { class: "card narrow" },
       heading("h2", copy.APP.connect_heading),
       field("router_url", "text", defaults.url),
+      el("div", { class: "stack" },
+        field("username", "text", defaults.username),
+        el("span", { class: "note" }, copy.NOTES.username_note)),
       defaults.remembered
         ? el("div", { class: "actions" },
             el("span", { class: "note" }, copy.NOTES.password_remembered),
@@ -33,11 +36,13 @@ async function onForget() {
 
 async function onConnect() {
   showError(null);
+  const password = document.getElementById("password");
+  if (password && !password.value.trim()) return showError(copy.ERRORS.no_password);
   state.busy = true;
   const button = document.getElementById("connect");
   if (button) button.disabled = true;               // in place: a render here would wipe the password
-  const password = document.getElementById("password");
-  const body = { url: document.getElementById("router_url").value };
+  const body = { url: document.getElementById("router_url").value,
+                 username: document.getElementById("username").value };
   if (password) { body.password = password.value; body.remember = state.remember; }
   try {
     const answer = await api("POST", routes.connect, body);

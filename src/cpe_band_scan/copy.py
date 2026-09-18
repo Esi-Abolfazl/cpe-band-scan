@@ -23,6 +23,11 @@ FIELDS = {
         "placeholder": "192.168.8.1",
         "help": "Usually 192.168.8.1 or 192.168.1.1. It's on the router's label.",
     },
+    "username": {
+        "label": "Admin username",
+        "placeholder": "admin",
+        "help": "A router whose login page asks only for a password still signs in as admin.",
+    },
     "password": {
         "label": "Admin password",
         "placeholder": "",
@@ -181,7 +186,8 @@ SIDES = {"lte": "4G", "nr": "5G", "trace": "test"}
 ERRORS = {
     "unreachable": "No router answers at {url}. Check the address and that you're on its network.",
     "not_huawei_api": "{url} answers, but it isn't a Huawei router. Check the address.",
-    "bad_password": "Wrong password. Use the router admin password, not the Wi-Fi one.",
+    "bad_password": "The router rejected this login ({detail}). Check the admin username and password.",
+    "no_password": "No admin password was given. Enter the router admin password, then connect.",
     "locked_out": "Too many wrong passwords. Wait 5 minutes, then try again.",
     "firmware_not_supported": "Firmware {detail} isn't supported. Band lock needs firmware 4. Try again after an update.",
     "no_band_lock": "This router has no band-lock page ({detail}). Check the address.",
@@ -207,6 +213,8 @@ NOTES = {
                      "Allow local network access in the VPN's settings, or scan with the speed test "
                      "unticked.",
     "probe_no_answer": "no answer",
+    "username_note": "Leave this as admin. Change it only if your router has its own username box "
+                     "and a different name in it.",
     "password_note": "Kept in memory only, unless you tick Remember.",
     "password_remembered": "The password is remembered on this computer.",
     "lock_survives": "The lock stays in place after a restart. Switch back to automatic whenever you want.",

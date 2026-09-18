@@ -93,14 +93,16 @@ def test_connecting_reports_the_device_and_suggests_a_name(live):
 
 
 @pytest.mark.parametrize("live", [fake_router_factory(
-    connect_error=hx.LoginErrorUsernamePasswordWrongException("no", 108001))], indirect=True)
-def test_a_wrong_password_comes_back_as_a_sentence_not_a_code(live):
+    connect_error=hx.LoginErrorUsernamePasswordWrongException("108006: Username and Password wrong", 108006))],
+    indirect=True)
+def test_a_rejected_login_comes_back_as_a_sentence_carrying_the_routers_code(live):
     session, port = live
     status, body = call(port, "POST", ROUTES["connect"],
                         {"url": "192.168.8.1", "password": "nope"}, token=session.token)
     assert status == 409
     assert body["error"] == "bad_password"
-    assert "admin password" in body["message"]
+    assert "admin username and password" in body["message"]
+    assert "108006" in body["message"]
 
 
 @pytest.mark.parametrize("live", [fake_router_factory(
@@ -190,6 +192,28 @@ def test_a_router_without_5g_yields_json_a_browser_accepts(live):
     status, body = call(port, "GET", ROUTES["status"], token=session.token)
     assert status == 200
     assert body["signal"]["nrsinr"] is None and body["signal"]["nrrsrp"] is None
+
+
+def test_the_username_the_page_sends_is_the_one_the_next_visit_starts_with(live):
+    """Nothing on the page used to carry a username, so a router whose admin account isn't
+    admin failed with the wrong-password sentence and no way to correct it."""
+    from cpe_band_scan import store
+    session, port = live
+    status, _ = call(port, "POST", ROUTES["connect"],
+                     {"url": "192.168.8.1", "password": "pw", "username": "operator"},
+                     token=session.token)
+    assert status == 200
+    assert store.settings()["username"] == "operator"
+    _, page = call(port, "GET", "/")
+    assert '"username": "operator"' in page
+
+
+def test_a_blank_password_is_refused_with_its_own_sentence(live):
+    session, port = live
+    status, body = call(port, "POST", ROUTES["connect"],
+                        {"url": "192.168.8.1", "password": ""}, token=session.token)
+    assert status == 409
+    assert body["error"] == "no_password"
 
 
 def test_the_page_shows_the_router_address_the_way_a_person_types_it(live):

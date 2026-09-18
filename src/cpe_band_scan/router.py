@@ -51,10 +51,13 @@ class Router:
         self._factory = connection_factory
 
     def _session(self):
+        if not self._password:
+            # a CPE with no admin password at all cannot be signed into by this app
+            raise RouterError("no_password")
         try:
             return self._factory(self.url, username=self.username, password=self._password)
         except LOGIN_WRONG as error:
-            raise RouterError("bad_password", type(error).__name__) from error
+            raise RouterError("bad_password", str(error)) from error
         except hx.LoginErrorUsernamePasswordOverrunException as error:
             raise RouterError("locked_out", type(error).__name__) from error
         except OSError as error:

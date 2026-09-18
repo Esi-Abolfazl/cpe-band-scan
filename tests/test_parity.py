@@ -67,6 +67,11 @@ def test_the_page_never_hardcodes_words_the_catalogue_owns():
             assert entry["label"] not in INDEX_BODY, f"{group}.{key} is hardcoded in index.html"
 
 
+def test_the_page_refuses_a_blank_password_before_it_calls_connect():
+    """The server refuses it too; the page saying so first saves a round trip to the router."""
+    assert "copy.ERRORS.no_password" in APP_JS
+
+
 def test_the_bootstrap_placeholder_is_still_there():
     assert "/*BOOTSTRAP*/" in INDEX, "the server injects the token and copy at this marker"
 

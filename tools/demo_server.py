@@ -72,7 +72,7 @@ class _DemoSession(FakeSession):
         return super().get(endpoint, prefix=prefix)
 
 
-def _demo_router(url, password, username="admin"):
+def _demo_router(url, password, username):
     return Router(url, password, username=username,
                   connection_factory=factory(_DemoSession(DEMO_DATA)))
 
