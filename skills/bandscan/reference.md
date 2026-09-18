@@ -5,11 +5,15 @@ auth-gated) on an H155-381 running 4.0.0.5, and by watching what the router did 
 
 ## Driver table
 
-Select by the probe, not the name: `SoftwareVersion` major + `net/net-feature-switch` `lock_freq_switch` (`3` = lock-freq page present) + a successful `net/lock-freq` read.
+Select by the probe, not the name, not the version and not a feature switch: a successful
+`net/lock-freq` read is the capability. Everything else is a proxy that was read off one device —
+`SoftwareVersion` starting `4.` refuses the `10.x` line (`10.0.5.2(H1SP9C43)`, N5368X 5G CPE Max,
+2026-09-18) and `lock_freq_switch == 3` is what the H155's firmware reports, not a constant. Both
+still go in the refusal text, so a report names the model, the firmware and the switch value.
 
 | Device / firmware | Read | Write | Notes |
 |---|---|---|---|
-| H155-381, H155-181, H153, H158 on **4.x** (Vue web UI, `WEBUI 4.0`) | `api/net/lock-freq` | `api/net/lock-freq` | LTE and NR. `api/net/net-mode` accepts only `NetworkMode` + `networkOption`/`LTEBandOption`; an `LTEBand` field makes it answer `-1` **after** applying the mode part. |
+| H155-381, H155-181, H153, H158 on **4.x and 10.x** (Vue web UI, `WEBUI 4.0`) | `api/net/lock-freq` | `api/net/lock-freq` | LTE and NR. `api/net/net-mode` accepts only `NetworkMode` + `networkOption`/`LTEBandOption`; an `LTEBand` field makes it answer `-1` **after** applying the mode part. |
 | B525, B818, B535, H112-370, H122-373 on **3.x/2.x** (jQuery web UI) | `api/net/net-mode` | `api/net/net-mode` with `<NetworkMode>00</NetworkMode><NetworkBand>3FFFFFFF</NetworkBand><LTEBand>hex</LTEBand>` | Classic path used by huawei-lte-api `set_net_mode` and the community userscripts. No NR lock. |
 | Anything else | `api/device/information` first | none | Stop and show the user the device/firmware line. |
 
@@ -17,7 +21,7 @@ The driver itself lives in `src/cpe_band_scan/device.py` in this repository; thi
 reasoning behind it, not a second implementation. A new firmware family means a new driver module
 there and a new row here.
 
-## `api/net/lock-freq` (firmware 4.x)
+## `api/net/lock-freq` (the 4.x and 10.x web UI)
 
 Requires login. Body is XML under `<request>`; huawei-lte-api's `post_set` builds it from an
 OrderedDict. `lock_mode`: `0` none, `3` band, `1` frequency (`band`+`freq`), `2` cell (`band`+`freq`+`pci`).
@@ -39,7 +43,8 @@ Error `100006` = band set refused. The write can log the session out (`ERRORSTAT
 Useful reads: `device/signal` (band string, SINR/RSRQ/RSRP, NR equivalents), `device/nbrcellinfo`
 and `device/seccellinfo` (visible cells, restricted by an active lock), `config/network/bandfreqlist.xml`
 (`lte_support_band_list`, `nr_support_band_list`, EARFCN ranges), `net/net-feature-switch`
-(`lock_freq_switch` 3 = this page variant), `developer/developermode-featureswitch`.
+(`lock_freq_switch`: 3 on the H155's 4.x firmware, other values elsewhere — diagnostic, not a gate),
+`developer/developermode-featureswitch`.
 
 ## Reading the numbers
 

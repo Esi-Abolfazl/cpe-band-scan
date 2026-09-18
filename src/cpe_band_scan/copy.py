@@ -189,7 +189,8 @@ ERRORS = {
     "bad_password": "The router rejected this login ({detail}). Check the admin username and password.",
     "no_password": "No admin password was given. Enter the router admin password, then connect.",
     "locked_out": "Too many wrong passwords. Wait 5 minutes, then try again.",
-    "firmware_not_supported": "Firmware {detail} isn't supported. Band lock needs firmware 4. Try again after an update.",
+    "firmware_not_supported": "Firmware {detail} locks bands through an older interface this app "
+                              "doesn't write. Check whether the router has an update.",
     "no_band_lock": "This router has no band-lock page ({detail}). Check the address.",
     "api_refused": "The router refused the request ({detail}). This is usually temporary. Wait a moment "
                    "and try again.",

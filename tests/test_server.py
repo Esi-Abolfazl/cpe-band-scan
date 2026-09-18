@@ -106,7 +106,8 @@ def test_a_rejected_login_comes_back_as_a_sentence_carrying_the_routers_code(liv
 
 
 @pytest.mark.parametrize("live", [fake_router_factory(
-    {"device/information": {"DeviceName": "B525", "SoftwareVersion": "3.11.1"}})], indirect=True)
+    {"device/information": {"DeviceName": "B525", "SoftwareVersion": "3.11.1"},
+     "net/lock-freq": hx.ResponseErrorException("not here", 100002)})], indirect=True)
 def test_an_unsupported_router_explains_why(live):
     session, port = live
     status, body = call(port, "POST", ROUTES["connect"],

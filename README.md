@@ -210,9 +210,10 @@ folder the app stores things in.
 
 ## Which routers work
 
-Huawei CPE routers on firmware 4: H155-381, H155-181, H153, H158 and relatives. The app checks the
-firmware before it writes anything and tells you in words if it can't help. Older firmware uses a
-different interface, which the app doesn't speak yet.
+Huawei CPE routers that have the band-lock page: H155-381, H155-181, H153, H158 and relatives, on
+the 4.x and 10.x firmware lines. The app asks the router for that page before it writes anything and
+tells you in words if the page isn't there. The 2.x and 3.x boxes (B525, B818, B535, H112, H122) lock
+bands through a different interface, which the app doesn't speak yet.
 
 ## What it stores
 
