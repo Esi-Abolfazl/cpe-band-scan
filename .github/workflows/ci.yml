@@ -10,14 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      # setup-uv floats no v10 tag, so the version is exact; uv reads .python-version itself.
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
-          python-version-file: .python-version
+          enable-cache: true
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-      - run: python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
+      - run: uv sync --locked --extra dev
       # The three lines below are AGENTS.md § Gates, verbatim.
-      - run: .venv/bin/python -m pytest -q
+      - run: uv run pytest -q
       - run: node scripts/check-repo.mjs
-      - run: .venv/bin/python scripts/check_baseline.py
+      - run: uv run scripts/check_baseline.py

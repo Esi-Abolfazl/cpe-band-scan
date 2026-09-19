@@ -1,9 +1,14 @@
 @echo off
-rem First run: make a private Python environment next to the app and install into it.
+rem First run: uv builds a private Python environment next to the app and installs into it.
 cd /d "%~dp0"
-rem this runs before Python exists, so copy.py cannot serve this sentence
-if not exist .venv\Scripts\cpe-band-scan.exe (
-  python -m venv .venv && .venv\Scripts\pip install -q . || (echo CPE Band Scan needs Python 3.10 or newer. Install it from python.org, then double-click again. & pause & exit /b 1)
+set "PATH=%USERPROFILE%\.local\bin;%LOCALAPPDATA%\Microsoft\WinGet\Links;%PATH%"
+where uv >nul 2>&1 || (
+  rem this runs before the app's Python exists, so copy.py cannot serve these sentences
+  echo CPE Band Scan needs uv, which sets up everything else for you.
+  echo Install it with:  winget install astral-sh.uv
+  echo Then double-click this file again.
+  pause
+  exit /b 1
 )
-.venv\Scripts\cpe-band-scan ui
+uv run cpe-band-scan ui
 pause

@@ -11,7 +11,7 @@ without an LLM. The skill itself survives, moved inside the app's own repository
 | Thing | Name | Why |
 |---|---|---|
 | The product | **CPE Band Scan** | An app can afford real words. It names the work and the hardware: CPE is the industry term for a fixed home 4G or 5G router |
-| Install name | `cpe-band-scan` | `pipx install cpe-band-scan` |
+| Install name | `cpe-band-scan` | `uv tool install cpe-band-scan` (superseded 2026-09-19: the row said `pipx install`; the toolchain is uv only) |
 | Import package | `cpe_band_scan` | |
 | Commands | `cpe-band-scan`, with `cpescan` as a short alias | Both reach the same CLI. `cpe-band-scan ui` opens the page |
 | Stored data | `~/.cpe-band-scan` | Terminal runs, lock profiles and the remembered router address. The password only behind the page's Remember tick, in an owner-only file (superseded 2026-09-16: the user asked not to retype it) |

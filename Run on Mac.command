@@ -1,9 +1,12 @@
 #!/bin/sh
-# First run: make a private Python environment next to the app and install into it.
+# First run: uv builds a private Python environment next to the app and installs into it.
 cd "$(dirname "$0")" || exit 1
-if [ ! -x .venv/bin/cpe-band-scan ]; then
-  # this runs before Python exists, so copy.py cannot serve this sentence
-  python3 -m venv .venv && .venv/bin/pip install -q . || {
-    echo "CPE Band Scan needs Python 3.10 or newer. Install it from python.org, then double-click again."; exit 1; }
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+if ! command -v uv >/dev/null 2>&1; then
+  # this runs before the app's Python exists, so copy.py cannot serve these sentences
+  echo "CPE Band Scan needs uv, which sets up everything else for you."
+  echo "Install it with:  brew install uv"
+  echo "Then double-click this file again."
+  exit 1
 fi
-exec .venv/bin/cpe-band-scan ui
+exec uv run cpe-band-scan ui

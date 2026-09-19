@@ -23,18 +23,18 @@ neither. `ruff` is one dev dependency that does both, but adding any dependency 
 
 On a yes from the owner:
 
-- `pyproject.toml`: `dev = ["pytest>=8", "ruff>=0.6"]`, plus `[tool.ruff]` with `line-length = 100`
+- `pyproject.toml`: `dev = ["pytest>=8", "ruff>=0.6"]` in the existing `[project.optional-dependencies]`, then `uv lock` — not `uv add --dev`, which opens a second bucket also called `dev` under `[dependency-groups]` that `uv sync --extra dev` does not install, plus `[tool.ruff]` with `line-length = 100`
   (the code's current width) and `select = ["E", "F", "B", "BLE"]` (`BLE001` is `err-06` at the
   linter layer). Start every rule the code violates today at `ignore`; list each in
   `docs/adoption-scorecard.md` with its count.
 - `AGENTS.md` § Gates gains two lines, in this order, above pytest:
-  `.venv/bin/ruff format --check .` and `.venv/bin/ruff check .`; `.github/workflows/ci.yml` runs
+  `uv run ruff format --check .` and `uv run ruff check .`; `.github/workflows/ci.yml` runs
   the same two lines.
 - `docs/conventions/python.md` § Gate mapping points `err-06` at `BLE001`.
 
 ## Acceptance
 
-- [ ] `.venv/bin/ruff format --check .` → `N files already formatted`
-- [ ] `.venv/bin/ruff check .` → `All checks passed!`
+- [ ] `uv run ruff format --check .` → `N files already formatted`
+- [ ] `uv run ruff check .` → `All checks passed!`
 - [ ] `grep -c "ruff" AGENTS.md .github/workflows/ci.yml` → `2` on each line
-- [ ] `.venv/bin/python -m pytest -q` → `339 passed`
+- [ ] `uv run pytest -q` → `339 passed`

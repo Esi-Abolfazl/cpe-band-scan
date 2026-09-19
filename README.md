@@ -7,28 +7,30 @@ the router back on automatic.
 
 ## Install
 
-Not on PyPI yet, so it installs from this folder. You need Python 3.10 or newer.
+Not on PyPI yet, so it installs from this folder. Everything here runs through
+[uv](https://docs.astral.sh/uv/), which builds the app's own Python environment and fetches a
+Python 3.10 or newer if you don't have one:
+
+macOS: `brew install uv`. Windows: `winget install astral-sh.uv`. Linux and everything else:
+the one-line installer at <https://docs.astral.sh/uv/getting-started/installation/>.
 
 Two files in this folder are named for you: double-click **Run on Mac** or **Run on Windows**.
 The first run builds a private Python environment next to the app, which takes about a minute.
 After that it opens straight away.
 
-From a terminal in this folder instead, install into a private environment. A Python that Homebrew
-or your Linux distribution installed refuses to install packages into itself, and says so as
-`error: externally-managed-environment`:
+From a terminal in this folder instead:
 
 ```bash
-python3 -m venv .venv && .venv/bin/pip install .
-source .venv/bin/activate
+uv sync
+uv run cpe-band-scan ui
 ```
 
-That gives you two commands, `cpe-band-scan` and its short alias `cpescan`. `activate` puts them on
-your PATH for that terminal (`.venv\Scripts\activate` on Windows); without it, call
-`.venv/bin/cpe-band-scan`. With pipx installed (`brew install pipx`, `apt install pipx`),
-`pipx install .` does the same and keeps the commands in every terminal.
+That gives you two commands, `cpe-band-scan` and its short alias `cpescan`. `uv run` puts either on
+your PATH for that one command; `uv tool install .` keeps them in every terminal, and then the
+commands below work as written. Without it, prefix each one with `uv run`.
 
-Don't reach for `--break-system-packages`, which the error suggests: it installs into the Python
-your system or Homebrew owns and can break it.
+uv installs into the app's own environment, never into the Python your system or Homebrew owns, so
+the `error: externally-managed-environment` that plain installs hit here cannot happen.
 
 ## Open the page
 
@@ -223,7 +225,7 @@ stored there only if you tick Remember, and only until you press Forget.
 ## Try it without a router
 
 ```bash
-python tools/demo_server.py
+uv run tools/demo_server.py
 ```
 
 Opens the page on port 8766 against a fake router with a short band list, so you can see a scan,

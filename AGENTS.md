@@ -37,13 +37,15 @@ on demand; the table stays for other agents.
 Run in full before claiming done. Every one also runs in CI on the same command.
 
 ```
-.venv/bin/python -m pytest -q
+uv run pytest -q
 node scripts/check-repo.mjs
-.venv/bin/python scripts/check_baseline.py
+uv run scripts/check_baseline.py
 ```
 
-The venv is `python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"`; the interpreter is pinned
-in `.python-version`, Node (the `check-repo` runner only) in `.nvmrc`.
+The environment is `uv sync --extra dev` — uv only, never pip. It reads the interpreter pinned in
+`.python-version` and the versions locked in `uv.lock`; a dependency edit rewrites the lock, so
+commit it. CI runs `uv sync --locked --extra dev`, which fails rather than re-resolve a stale lock.
+Node (the `check-repo` runner only) is pinned in `.nvmrc`.
 
 ## Baseline
 

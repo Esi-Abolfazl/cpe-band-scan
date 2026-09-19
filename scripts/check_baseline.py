@@ -31,7 +31,7 @@ def main(argv: list[str]) -> int:
         elif now > counter["count"]:
             grew.append(f"{name}: {now} > baseline {counter['count']} ({counter['rule']})")
         elif now < counter["count"]:
-            fell.append(f"{name}: {now} < baseline {counter['count']} — lower it: python scripts/check_baseline.py --write")
+            fell.append(f"{name}: {now} < baseline {counter['count']} — lower it: uv run scripts/check_baseline.py --write")
     if "--write" in argv:
         BASELINE.write_text(json.dumps(baseline, indent=2) + "\n", encoding="utf-8")
         print("check-baseline: written")
