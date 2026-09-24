@@ -62,6 +62,7 @@ class Session:
         self.router = None
         self.device = None
         self.events = []
+        self.results = None                   # the last scan that measured a band; outlives later jobs
         self.kind = ""
         self.thread = None
         self.cancelled = False
@@ -98,6 +99,8 @@ class Session:
     def _drive(self, make_events):
         try:
             for event in make_events(lambda: self.cancelled):
+                if event["type"] == "done" and any(side["results"] for side in event["run"]["sides"].values()):
+                    self.results = event["run"]
                 self.events.append(event)
         except RouterError as error:
             self.events.append({"type": "error", "code": error.code, "detail": error.detail,

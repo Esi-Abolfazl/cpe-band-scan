@@ -1,5 +1,5 @@
 ---
-status: open
+status: done
 area: module
 date: 2026-09-24
 origin: .agents/plans/2026-09-23-project-review-fixes.md (manual QA)
@@ -34,8 +34,14 @@ review fixes: it's a product choice about what "the results" are, not a regressi
 
 ## Acceptance
 
-- [ ] `uv run pytest -q tests/test_page_behaviour.py` → a stopped 0-band scan leaves
+- [x] `uv run pytest -q tests/test_page_behaviour.py` → a stopped 0-band scan leaves
   `state.results` as it was.
-- [ ] `uv run pytest -q tests/test_server_jobs.py` → after a scan then a test, a fresh events
+- [x] `uv run pytest -q tests/test_server_jobs.py` → after a scan then a test, a fresh events
   read still yields the scan's run.
-- [ ] `uv run pytest -q` → all pass.
+- [x] `uv run pytest -q` → all pass.
+
+## Resolution (2026-09-24)
+
+`Session.results` holds the last scan whose run measured a band (`server.py`, `_drive`), and
+`/api/events` returns it as `results`. `poll()` and `resume()` both take `state.results` from that
+answer, so the page no longer derives it from `done` events.

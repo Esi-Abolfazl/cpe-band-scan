@@ -87,6 +87,19 @@ def test_a_reloaded_test_says_what_it_changes_the_way_the_live_page_did():
     assert as_it_is == copy.NOTES["test_target_current"]
 
 
+def test_the_results_on_screen_are_the_servers_last_results_not_the_last_done_event():
+    """The server decides what the last results are, so a stopped 0-band scan and a reload
+    after a test both keep the finished scan (2026-09-24 QA)."""
+    empty = {"sides": {"lte": {"order": [], "sets": {}, "results": {}, "skipped": {}}}}
+    answer = {"since": 1, "events": [{"type": "done", "run": empty}], "running": False,
+              "kind": "scan", "results": RESULTS}
+    ran = page.run(["app.js", "test.js", "scan.js"], """
+        globalThis.render = () => {}; globalThis.refreshStatus = async () => {};
+        await poll();
+        return state.results;""", responses={f"GET {api.ROUTES['events']}?since=0": {"status": 200, "body": answer}})
+    assert ran["result"] == RESULTS
+
+
 def floor_cells(run):
     return page.run(["app.js", "results.js"], f"""
         const text = (node) => node.nodeType === 3 ? node.textContent

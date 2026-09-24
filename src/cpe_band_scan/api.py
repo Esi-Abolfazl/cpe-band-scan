@@ -59,7 +59,7 @@ def events(session, body, id, query):
     since = max(0, int(query.get("since", ["0"])[0]))
     events = session.events[since:]
     return {"since": since + len(events), "events": events,
-            "running": session.running(), "kind": session.kind}
+            "running": session.running(), "kind": session.kind, "results": session.results}
 
 
 def connect(session, body, id, query):

@@ -43,7 +43,7 @@ _CLEAR_FACTORY, _CLEAR_FAKE = _locked_router_factory(_UNLOCKED_DATA)
 
 
 def drain(port, session, timeout=5):
-    """Poll until the job reports it has finished."""
+    """Poll until the job reports it has finished and its thread is gone."""
     since, events = 0, []
     deadline = time.time() + timeout
     while time.time() < deadline:
@@ -51,6 +51,7 @@ def drain(port, session, timeout=5):
         since, new = body["since"], body["events"]
         events += new
         if any(event["type"] == "finished" for event in new):
+            session.thread.join(timeout)     # "finished" is the last event, not the thread's exit
             return events
         time.sleep(0.05)
     raise AssertionError(f"job never finished; saw {[e['type'] for e in events]}")
@@ -286,3 +287,4 @@ def test_unticking_the_speed_test_builds_no_probe(live, monkeypatch):
 
 def test_the_cancel_grace_covers_a_band_that_is_being_probed():
     assert server.SETTLE_GRACE >= scanner.PER_SET + speed.DURATION
+

@@ -261,8 +261,9 @@ ln -s "$PWD/skills/bandscan" ~/.claude/skills/bandscan
 - **A band lock survives a reboot.** If you forget you set one and the tower changes, the router
   keeps using a band that no longer suits it. Switch back to automatic when you move house or change
   provider.
-- **The results table is the last finished scan.** After a test and a page reload it is gone until
-  the next scan. Terminal scans are saved under `runs` and can be reopened with `show`.
+- **The results table is the last scan that measured a band.** It survives a test, a stopped scan
+  and a page reload, but not a restart of the app. Terminal scans are saved under `runs` and can be
+  reopened with `show`.
 - **The speed test costs data and reads one moment.** Up to 50 MB per band, so a full scan of every band can use
   up to about 1.4 GB on a fast link; slow links use far less because the window closes at five
   seconds. Cell load changes hour to hour. It is shown next to the rating and never decides it.

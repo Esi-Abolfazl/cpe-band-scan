@@ -37,8 +37,8 @@ async function resume() {
     state.events = answer.events;
     state.running = answer.running;
     state.kind = answer.kind;
+    state.results = answer.results;
     for (const event of answer.events) {
-      if (event.type === "done") state.results = event.run;
       if (event.type === "done" || event.type === "trace_done") state.run = event.run;
     }
     if (state.events.length) { startLive(); if (!state.running) finishLive(); }
