@@ -1,5 +1,5 @@
 ---
-status: planned
+status: done
 area: package
 date: 2026-09-21
 origin: none — found during the owner's project review from zero

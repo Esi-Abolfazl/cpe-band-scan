@@ -1,5 +1,5 @@
 ---
-status: open
+status: done
 run-with: not yet run
 origin: .agents/handoffs/2026-09-21-project-review.md
 ---
@@ -99,7 +99,7 @@ Each task: write the failing test, see it fail, fix, see it pass, run the three 
 ### Phase 2 — P2: correctness
 
 **Task 4 · Request framing before any side effect (#4).**
-- `server._body`: raise `ValueError` for a bad `Content-Length`, a body over 64 KiB, invalid JSON,
+- `server._body`: raise `ValueError` for a bad `Content-Length`, a body over 1 MiB, invalid JSON,
   or a non-object. Call it inside the `try` in `_dispatch`.
 - `_dispatch`: add a last `except Exception` → `_fail("crash", 500, detail=repr(error))` so no
   request ends as a dropped connection; the `RouterError` branch reads `url` from a body that is
@@ -174,10 +174,21 @@ Each task: write the failing test, see it fail, fix, see it pass, run the three 
 
 ## Acceptance
 
-- [ ] Every task's named test fails on `411c033` and passes after its commit.
-- [ ] `uv run pytest -q` → all pass.
-- [ ] `node scripts/check-repo.mjs` → `check-repo: ok`.
-- [ ] `uv run scripts/check_baseline.py` → `check-baseline: ok`.
-- [ ] Manual QA on the demo (after Task 10), temp home: connect, scan then cancel, auto-row test
+- [x] Every task's named test fails on `411c033` and passes after its commit.
+- [x] `uv run pytest -q` → all pass.
+- [x] `node scripts/check-repo.mjs` → `check-repo: ok`.
+- [x] `uv run scripts/check_baseline.py` → `check-baseline: ok`.
+- [x] Manual QA on the demo (after Task 10), temp home: connect, scan then cancel, auto-row test
   then restore, profile differing only in secondaries, reload after a test; 375 px and 1440 px,
   keyboard, both colour schemes.
+
+## Manual QA findings (2026-09-24)
+
+- Fixed: after a reload, a test was worded from the router's whole lock. A 4G-automatic test read
+  "Locked to N78", and a test of the connection as it is read as a lock. `trace_start` now carries
+  the test's `plan`, and the live page and `resume()` both word it through `testWhat`.
+- Fixed: `socketserver`'s listen backlog of 5 is smaller than one page load's burst of
+  connections. macOS reset the overflow, and about 1 load in 20 came up blank
+  (`LocalServer.request_queue_size = 128`).
+- Handoff: `.agents/handoffs/2026-09-24-keep-last-scan-results.md`. A stopped 0-band scan, or a
+  reload after a test, wipes the last scan's results off the page.
