@@ -223,3 +223,53 @@ def test_the_page_shows_the_router_address_the_way_a_person_types_it(live):
     session, port = live
     _, page = call(port, "GET", "/")
     assert '"url": "192.168.1.1"' in page
+
+
+@pytest.fixture
+def connected():
+    """A server whose session is already connected to one FakeSession the test can inspect."""
+    fake = FakeSession(dict(SUPPORTED))
+    session = server.Session(router_factory=lambda url, password, username: Router(
+        url, password, username=username, connection_factory=factory(fake)))
+    session.connect("192.168.8.1", "pw", "admin")
+    httpd = server.build(port=0, session=session)
+    threading.Thread(target=httpd.serve_forever, kwargs={"poll_interval": 0.02}, daemon=True).start()
+    yield session, httpd.server_address[1], fake
+    httpd.shutdown()
+    httpd.server_close()
+
+
+def raw(port, method, path, body: bytes, token, length=None):
+    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+    connection.putrequest(method, path)
+    connection.putheader("X-CPE-Band-Scan-Token", token)
+    connection.putheader("Content-Length", str(len(body)) if length is None else length)
+    connection.endheaders(body)
+    response = connection.getresponse()
+    return response.status, json.loads(response.read())
+
+
+@pytest.mark.parametrize("route", ["apply", "clear", "scan", "test", "connect", "profiles"])
+@pytest.mark.parametrize("body", [b"{broken", b"[]", b"null", b'"x"', b"\xff"])
+def test_a_body_that_is_not_a_json_object_is_refused_before_anything_is_written(connected, route, body):
+    """Regression: bad JSON was read as {}, so `clear` with a broken body cleared the lock,
+    and `[]` or `null` crashed the handler with no answer at all."""
+    session, port, fake = connected
+    status, answer = raw(port, "POST", ROUTES[route], body, session.token)
+    assert (status, answer["error"]) == (400, "bad_request")
+    assert fake.posts == [] and session.thread is None
+
+
+@pytest.mark.parametrize("length", ["x", "-1", str(server.MAX_BODY + 1)])
+def test_a_body_length_that_cannot_be_trusted_is_refused(connected, length):
+    session, port, fake = connected
+    status, answer = raw(port, "POST", ROUTES["clear"], b"{}", session.token, length=length)
+    assert (status, answer["error"]) == (400, "bad_request")
+    assert fake.posts == []
+
+
+def test_a_handler_that_crashes_still_answers_in_json(connected, monkeypatch):
+    session, port, _ = connected
+    monkeypatch.setitem(api.HANDLERS, ("POST", "clear"), lambda *args: 1 / 0)
+    status, answer = raw(port, "POST", ROUTES["clear"], b"{}", session.token)
+    assert (status, answer["error"]) == (500, "crash")

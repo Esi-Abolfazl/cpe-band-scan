@@ -44,7 +44,8 @@ def match(path: str) -> tuple[str, str] | None:
 
 
 # Each handler: (session, body, id, query) -> JSON payload. KeyError -> 404, ValueError -> 400,
-# RouterError -> 409, mapped by the server.
+# RouterError -> 409, anything else -> 500 "crash", mapped by the server; a body that is not a
+# JSON object never reaches a handler.
 
 def status(session, body, id, query):
     router = session.require_router()

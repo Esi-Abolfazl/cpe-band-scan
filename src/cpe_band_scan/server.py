@@ -45,6 +45,9 @@ SETTLE_GRACE = scanner.PER_SET + speed.DURATION + 5   # worst case: cancel lands
                                      # lock and restore automatic mode
 
 
+MAX_BODY = 1 << 20   # the largest body is a saved 10-minute test: 60 samples x ~0.3 KB = 18 KB
+
+
 def _default_router(url, password, username):
     return Router(url, password, username=username)
 
@@ -129,11 +132,14 @@ class Handler(BaseHTTPRequestHandler):
         self._json({"error": code, "message": copy.text("ERRORS", code, **fields)}, status)
 
     def _body(self) -> dict:
+        """ValueError for anything but a JSON object, before a handler can act on it."""
         length = int(self.headers.get("Content-Length") or 0)
-        try:
-            return json.loads(self.rfile.read(length) or b"{}")
-        except ValueError:
-            return {}
+        if not 0 <= length <= MAX_BODY:
+            raise ValueError(f"Content-Length {length}")
+        body = json.loads(self.rfile.read(length) or b"{}")
+        if not isinstance(body, dict):
+            raise ValueError(f"body must be a JSON object, got {type(body).__name__}")
+        return body
 
     def _host_allowed(self) -> bool:
         if (self.headers.get("Host") or "").split(":")[0] in ALLOWED_HOSTS:
@@ -185,8 +191,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"error": "not_found"}, 404)
         if not self._allowed():
             return
-        body = self._body() if method == "POST" else {}
+        body = {}
         try:
+            if method == "POST":
+                body = self._body()
             return self._json(api.HANDLERS[(method, hit[0])](self.session, body, hit[1], parse_qs(parsed.query)))
         except KeyError:
             return self._json({"error": "not_found"}, 404)
@@ -195,6 +203,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._fail(error.code, detail=error.detail, url=url)
         except ValueError as error:
             return self._fail("bad_request", 400, detail=str(error))
+        except Exception as error:                      # a crash must still answer the page
+            return self._fail("crash", 500, detail=repr(error))
 
 
 class LocalServer(ThreadingHTTPServer):
