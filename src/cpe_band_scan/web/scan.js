@@ -39,7 +39,7 @@ function describe(event) {
       const speed = event.result.speed;
       const answered = speed && !speed.error;
       return coloured(answered ? words.log_result_probe : words.log_result,
-                      { name: event.name, floor: event.result.floor, grade: "{grade}",
+                      { name: event.name, floor: event.floor, grade: "{grade}",
                         mbps: answered ? speed.mbps : "", ping: answered ? speed.latency_ms : "" },
                       "grade", el("span", { class: `grade-${event.result.grade}` }, copy.GRADES[event.result.grade]));
     }

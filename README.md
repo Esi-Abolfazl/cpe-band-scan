@@ -109,7 +109,7 @@ One table per network, best first. Columns:
 
 | Column | Meaning |
 |---|---|
-| # | rank, by rating first, then by the lowest quality. The auto row is the router's own choice, measured the same way, and competes like any band |
+| # | rank, by rating first, then by the lowest quality. On the 5G table both rest on the 5G carrier alone, so the 4G anchor never moves a 5G band. The auto row is the router's own choice, measured the same way, and competes like any band |
 | Band | the band that was locked. **Best** marks the top of the ranking |
 | Rating | Excellent, Good, Fair, Poor, or No 5G |
 | 5G | whether the 5G carrier stayed up on this band. Bands that lose it are never recommended |

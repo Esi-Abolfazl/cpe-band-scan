@@ -48,6 +48,7 @@ def summarise(rows: list[dict]) -> dict:
     out = {"band": rows[-1]["band"], "carriers": rows[-1].get("carriers", []),
            "has5g": all(row["has5g"] for row in rows),
            "floor": min(row["sinr"] for row in rows),
+           "nrfloor": min((row["nrsinr"] for row in rows if not math.isnan(row["nrsinr"])), default=math.nan),
            "peak": max(row["sinr"] for row in rows),
            "samples": len(rows)}
     out.update({field: median(field) for field in SIGNAL_FIELDS})
@@ -63,16 +64,20 @@ def measure(router: Router, samples: int = SAMPLES, gap: int = GAP, sleep=time.s
     return summarise(rows)
 
 
-def grade(measurement: dict, expect_5g: bool = True) -> str:
+FLOOR = {"lte": "floor", "nr": "nrfloor"}   # the SINR floor a side is rated on
+
+
+def grade(measurement: dict, expect_5g: bool = True, side: str = "lte") -> str:
+    """The NR side has no RSRQ gate: the router reports no NR RSRQ."""
     if expect_5g and not measurement.get("has5g"):
         return "no5g"
     for name, floor, rsrq in GRADES:
-        if measurement["floor"] >= floor and measurement["rsrq"] >= rsrq:
+        if measurement[FLOOR[side]] >= floor and (side == "nr" or measurement["rsrq"] >= rsrq):
             return name
     return "poor"
 
 
-RANK_KEYS = {"lte": ("floor", "sinr"), "nr": ("nrsinr", "nrrsrp")}
+RANK_KEYS = {"lte": ("floor", "sinr"), "nr": ("nrfloor", "nrsinr")}
 
 
 GRADE_ORDER = ("excellent", "good", "fair", "poor", "no5g")
@@ -80,14 +85,15 @@ GRADE_ORDER = ("excellent", "good", "fair", "poor", "no5g")
 
 def rank(results: dict, expect_5g: bool = True, side: str = "lte") -> list[str]:
     """Best first: by grade, then by the floor, then by the typical signal. 'auto' competes
-    like any band, since leaving the router to choose is a choice too. The 4G side ranks by
-    the LTE SINR floor; the 5G side by the NR carrier, because during a 5G scan the LTE
-    anchor is on automatic and its numbers say nothing about the NR band under test."""
-    first, second = RANK_KEYS.get(side, RANK_KEYS["lte"])
+    like any band, since leaving the router to choose is a choice too. The 4G side is graded
+    and ranked on the LTE carrier; the 5G side on the NR carrier alone, because during a 5G
+    scan the LTE anchor is on automatic and its numbers say nothing about the NR band under
+    test."""
+    first, second = RANK_KEYS[side]
     live = {name: row for name, row in results.items()
             if (row.get("has5g") or not expect_5g)
             and not (math.isnan(row.get(first, float("nan"))) or math.isnan(row.get(second, float("nan"))))}
-    return sorted(live, key=lambda name: (GRADE_ORDER.index(grade(live[name], expect_5g)),
+    return sorted(live, key=lambda name: (GRADE_ORDER.index(grade(live[name], expect_5g, side)),
                                           -live[name][first], -live[name][second]))
 
 

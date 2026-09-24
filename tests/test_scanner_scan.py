@@ -168,3 +168,27 @@ def test_a_5g_side_row_without_a_5g_carrier_is_graded_no_5g_even_when_none_was_e
     events = run_scan(router=router, device=DEVICE, sides=("nr",))
     done = next(event for event in events if event["type"] == "side_done")
     assert done["results"]["auto"]["grade"] == "no5g" and done["order"] == []
+
+def test_a_5g_scan_applies_the_strong_nr_band_even_when_the_weak_one_rode_a_better_anchor():
+    """Regression: the rating read the LTE anchor on the 5G side, so N41 at -5 dB on an
+    excellent anchor was ranked, reported and applied above N78 at +25 dB on a good one."""
+    def reading(lte, rsrq, nr):
+        return {"band": "B7(N78)", "sinr": f"{lte}", "rsrq": f"{rsrq}", "rsrp": "-85",
+                "nrsinr": f"{nr}", "nrrsrp": "-80"}
+    session = FakeSession({
+        "device/signal": Seq([reading(8, -10, 10)] + [reading(15, -8, -5)] * 6
+                             + [reading(1, -12, 25)] * 6 + [reading(8, -10, 10)] * 7),
+        "net/lock-freq": {"lte_info": {}, "nr_info": {}},
+        "config/network/bandfreqlist.xml": {"config": {"lte_support_band_list": "7",
+                                                       "nr_support_band_list": "41,78"}},
+        "device/nbrcellinfo": {}, "device/seccellinfo": {},
+    })
+    router = Router("192.168.8.1", "pw", connection_factory=factory(session))
+    events = run_scan(router=router, device=DEVICE, sides=("nr",))
+    done = next(event for event in events if event["type"] == "side_done")
+    assert done["order"][0] == "N78"
+    reported = {event["name"]: event for event in events if event["type"] == "set_result"}
+    assert reported["N78"]["result"]["grade"] == "excellent" and reported["N78"]["floor"] == 25
+    assert reported["N41"]["floor"] == -5, "the progress line shows the floor the rating rests on"
+    applied = next(event for event in events if event["type"] == "applied")
+    assert applied["plan"]["nr"] == ["78"]

@@ -126,12 +126,35 @@ def test_the_5g_side_is_ranked_by_the_5g_carrier():
     """During a 5G scan the 4G anchor stays on automatic, so the LTE floor is the same noise
     for every NR band. Only the NR carrier's own numbers tell the bands apart."""
     results = {
-        "N78": {"floor": 8, "sinr": 8, "rsrq": -8, "nrsinr": 2, "nrrsrp": -80, "has5g": True},
-        "N1": {"floor": 8, "sinr": 8, "rsrq": -8, "nrsinr": 20, "nrrsrp": -90, "has5g": True},
-        "N28": {"floor": 8, "sinr": 8, "rsrq": -8, "nrsinr": 20, "nrrsrp": -70, "has5g": True},
-        "auto": {"floor": 8, "sinr": 8, "rsrq": -8, "nrsinr": 30, "nrrsrp": -60, "has5g": True},
+        "N78": {"floor": 8, "sinr": 8, "rsrq": -8, "nrfloor": 1, "nrsinr": 2, "nrrsrp": -80, "has5g": True},
+        "N1": {"floor": 8, "sinr": 8, "rsrq": -8, "nrfloor": 12, "nrsinr": 20, "nrrsrp": -90, "has5g": True},
+        "N28": {"floor": 8, "sinr": 8, "rsrq": -8, "nrfloor": 12, "nrsinr": 22, "nrrsrp": -70, "has5g": True},
+        "auto": {"floor": 8, "sinr": 8, "rsrq": -8, "nrfloor": 25, "nrsinr": 30, "nrrsrp": -60, "has5g": True},
     }
     assert metrics.rank(results, side="nr") == ["auto", "N28", "N1", "N78"]
+
+
+def test_a_5g_band_is_rated_by_its_own_carrier_not_by_the_4g_anchor():
+    """Regression: grade() read the LTE floor and RSRQ on the 5G side too, so an NR band at
+    -5 dB riding an excellent 4G anchor outranked one at +25 dB on a merely good anchor."""
+    weak = {"floor": 10, "sinr": 12, "rsrq": -8, "nrfloor": -5, "nrsinr": -5, "nrrsrp": -100, "has5g": True}
+    strong = {"floor": 1, "sinr": 3, "rsrq": -12, "nrfloor": 25, "nrsinr": 25, "nrrsrp": -85, "has5g": True}
+    assert metrics.rank({"N41": weak, "N78": strong}, side="nr") == ["N78", "N41"]
+    assert metrics.grade(strong, side="nr") == "excellent"
+    assert metrics.grade(weak, side="nr") == "fair"
+
+
+def test_the_4g_anchor_alone_never_reorders_the_5g_side():
+    nr = [{"nrfloor": 9, "nrsinr": 10, "nrrsrp": -80}, {"nrfloor": 3, "nrsinr": 4, "nrrsrp": -80}]
+    for lte in ({"floor": -8, "sinr": -6, "rsrq": -20}, {"floor": 12, "sinr": 14, "rsrq": -6}):
+        results = {"N78": {**nr[0], **lte, "has5g": True},
+                   "N41": {**nr[1], "floor": 12, "sinr": 14, "rsrq": -6, "has5g": True}}
+        assert metrics.rank(results, side="nr") == ["N78", "N41"]
+
+
+def test_the_5g_floor_is_the_lowest_nr_reading_that_was_reported():
+    data = {"device/signal": Seq([signal(nrsinr="9"), signal(nrsinr=""), signal(nrsinr="3")])}
+    assert metrics.measure(router_for(data), samples=3, sleep=lambda s: None)["nrfloor"] == 3.0
 
 
 def test_the_4g_side_is_still_ranked_by_the_floor():
@@ -147,8 +170,8 @@ def test_rank_leaves_out_rows_that_have_no_number_to_rank_on():
     it returns input order dressed up as a ranking."""
     nan = float("nan")
     results = {
-        "N78": {"floor": 8, "sinr": 8, "rsrq": -8, "nrsinr": nan, "nrrsrp": nan, "has5g": False},
-        "N1": {"floor": 8, "sinr": 8, "rsrq": -8, "nrsinr": 20, "nrrsrp": -90, "has5g": True},
+        "N78": {"floor": 8, "sinr": 8, "rsrq": -8, "nrfloor": nan, "nrsinr": nan, "nrrsrp": nan, "has5g": False},
+        "N1": {"floor": 8, "sinr": 8, "rsrq": -8, "nrfloor": 15, "nrsinr": 20, "nrrsrp": -90, "has5g": True},
     }
     assert metrics.rank(results, expect_5g=False, side="nr") == ["N1"]
 

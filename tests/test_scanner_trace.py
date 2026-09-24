@@ -67,3 +67,9 @@ def test_a_reader_that_stops_at_trace_start_still_gets_the_arriving_lock_back():
     events.close()
     writes = [p[1] for p in session.posts if p[0] == "net/lock-freq"]
     assert len(writes) == 2 and writes[-1]["lte_info"]["freq_infos"]["freq_info"] == [{"band": "7"}]
+
+def test_a_5g_only_test_is_rated_on_the_5g_carrier():
+    weak_anchor = {"band": "B7(N78)", "sinr": "-8", "rsrq": "-18", "rsrp": "-100", "nrsinr": "12", "nrrsrp": "-80"}
+    router, _ = build([weak_anchor] * 50)
+    events = list(scanner.trace(router, seconds=20, gap=10, sleep=lambda s: None, nr=["78"]))
+    assert events[-1]["run"]["summary"]["grade"] == "excellent"

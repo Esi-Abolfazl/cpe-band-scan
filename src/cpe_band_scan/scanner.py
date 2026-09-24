@@ -62,10 +62,11 @@ def _scan_side(router, side, sets, expect_5g, cancelled, sleep, probe, per_set):
             measurement = metrics.measure(router, sleep=sleep)
             if probe is not None and not cancelled():
                 measurement["speed"] = probe.measure()
-            measurement["grade"] = metrics.grade(measurement, expect_5g or side == "nr")
+            measurement["grade"] = metrics.grade(measurement, expect_5g or side == "nr", side)
             measurement["bands"] = bands
             results[name] = measurement
-            yield {"type": "set_result", "side": side, "name": name, "result": measurement}
+            yield {"type": "set_result", "side": side, "name": name, "result": measurement,
+                   "floor": measurement[metrics.FLOOR[side]]}
     finally:
         try:
             set_side([])
@@ -213,7 +214,8 @@ def trace(router: Router, seconds: int = 120, gap: int = 10, cancelled=None, sle
         if not rows:
             return
         summary = metrics.summarise(rows)
-        summary["grade"] = metrics.grade(summary, expect_5g=rows[0]["has5g"])
+        summary["grade"] = metrics.grade(summary, expect_5g=rows[0]["has5g"],
+                                         side="nr" if nr and not lte else "lte")
         run = {"kind": "test", "started": started, "finished": _now(), "router_url": router.url,
                "lock": lockfreq.read_lock(router), "samples": rows, "summary": summary}
         yield {"type": "trace_done", "run": run}

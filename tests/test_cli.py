@@ -15,7 +15,7 @@ def test_render_turns_an_event_into_a_sentence():
 
 
 def test_render_names_the_grade_in_words():
-    line = cli.render({"type": "set_result", "name": "B7",
+    line = cli.render({"type": "set_result", "name": "B7", "floor": 7.0,
                        "result": {"grade": "excellent", "floor": 7.0}})
     assert copy.GRADES["excellent"] in line
 
@@ -236,11 +236,11 @@ def test_the_speed_note_names_the_verdict_and_is_silent_without_one():
 
 
 def test_render_says_speed_and_ping_when_a_result_has_them_and_not_when_the_probe_failed():
-    with_speed = cli.render({"type": "set_result", "name": "B7",
+    with_speed = cli.render({"type": "set_result", "name": "B7", "floor": 7.0,
                              "result": {"grade": "excellent", "floor": 7.0,
                                         "speed": {"latency_ms": 85, "jitter_ms": 1, "mbps": 42.5, "bytes": 1, "seconds": 5}}})
     assert "42.5" in with_speed and "85" in with_speed
-    failed = cli.render({"type": "set_result", "name": "B7",
+    failed = cli.render({"type": "set_result", "name": "B7", "floor": 7.0,
                          "result": {"grade": "excellent", "floor": 7.0, "speed": {"error": "no_answer"}}})
     assert "Mbit" not in failed
 

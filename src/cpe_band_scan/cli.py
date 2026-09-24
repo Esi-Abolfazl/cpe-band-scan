@@ -78,10 +78,10 @@ def render(event) -> str | None:
         reading = result.get("speed") or {}
         if reading and "error" not in reading:
             return copy.text("PROGRESS", "set_result_probe", name=event["name"],
-                             grade=copy.GRADES[result["grade"]], floor=f"{result['floor']:g}",
+                             grade=copy.GRADES[result["grade"]], floor=f"{event['floor']:g}",
                              mbps=f"{reading['mbps']:g}", ping=reading["latency_ms"])
         return copy.text("PROGRESS", "set_result", name=event["name"],
-                         grade=copy.GRADES[result["grade"]], floor=f"{result['floor']:g}")
+                         grade=copy.GRADES[result["grade"]], floor=f"{event['floor']:g}")
     if kind == "set_skipped":
         return copy.text("PROGRESS", event["reason"], name=event["name"])
     if kind == "side_done":
