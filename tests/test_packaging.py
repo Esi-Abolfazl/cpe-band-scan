@@ -1,4 +1,5 @@
 import os
+import subprocess
 import tomllib
 from pathlib import Path
 
@@ -97,3 +98,11 @@ def test_the_launchers_name_the_one_thing_to_install_when_uv_is_missing():
 
 def test_the_package_init_re_exports_nothing():
     assert (ROOT / "src" / "cpe_band_scan" / "__init__.py").read_text(encoding="utf-8").strip() == ""
+
+
+def test_local_credential_files_are_ignored_and_a_sanitized_example_is_not():
+    """config.password() and the README read PASSWORD= from ./.env; nothing stopped a commit of it."""
+    def ignored(name):
+        return subprocess.run(["git", "check-ignore", "-q", name], cwd=ROOT, check=False).returncode == 0
+    assert ignored(".env") and ignored(".env.local")
+    assert not ignored(".env.example")
