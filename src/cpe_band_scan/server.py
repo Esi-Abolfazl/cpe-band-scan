@@ -210,7 +210,10 @@ class Handler(BaseHTTPRequestHandler):
 class LocalServer(ThreadingHTTPServer):
     """Bind without the reverse DNS lookup HTTPServer does by default: on a machine whose
     resolver is slow or VPN-routed it blocks for tens of seconds before the page is reachable,
-    and the name it resolves is only used for CGI variables this server never emits."""
+    and the name it resolves is only used for CGI variables this server never emits.
+    socketserver's backlog of 5 is below one page load's burst of connections; macOS resets
+    the overflow, so a script fails to load and the page comes up blank."""
+    request_queue_size = 128
 
     def server_bind(self):
         socketserver.TCPServer.server_bind(self)

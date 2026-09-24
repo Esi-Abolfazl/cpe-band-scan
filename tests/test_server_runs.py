@@ -1,5 +1,8 @@
+import socket
+
 import pytest
 
+from cpe_band_scan import server
 from cpe_band_scan.api import ROUTES
 from tests.test_server import call, fake_router_factory, live  # noqa: F401
 
@@ -108,3 +111,16 @@ def test_a_remembered_password_signs_in_without_being_typed_again(live):
     assert status == 200
     call(port, "POST", ROUTES["forget"], {}, token=session.token)
     assert store.remembered_password() == ""
+
+
+def test_a_page_loads_burst_of_connections_is_queued_not_refused():
+    """Regression: the default listen backlog of 5 is smaller than one page load (a document,
+    a stylesheet, eight scripts, three reads), so macOS reset a script now and then and the page
+    came up blank. Nothing accepts here, so every connection must fit in the queue."""
+    httpd = server.build(port=0)
+    try:
+        sockets = [socket.create_connection(httpd.server_address, timeout=1) for _ in range(24)]
+        for each in sockets:
+            each.close()
+    finally:
+        httpd.server_close()
