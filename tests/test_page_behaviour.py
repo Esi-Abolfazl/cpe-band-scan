@@ -36,3 +36,21 @@ def test_picking_a_band_keeps_the_other_ranked_bands_as_secondaries_and_leaves_5
 def test_picking_5g_automatic_leaves_the_4g_side_as_it_is():
     ran = start_test(nr="auto")
     assert ran["requests"][0]["body"] == {"seconds": 60, "gap": 10, "nr": []}
+
+
+def in_use(current, saved):
+    return page.run(["app.js", "test.js", "profiles.js"], f"""
+        state.status = {{ lock: {json.dumps(current)} }};
+        return profileInUse({{ lock: {json.dumps(saved)} }});""")["result"]
+
+
+def test_a_profile_that_differs_only_in_its_secondary_carriers_is_not_in_use():
+    """Regression: only anchors were compared, so B7 + B1 showed In use over B7 + B3 and its
+    Apply button was gone."""
+    assert in_use({"lte": [["7"], ["3"]], "nr": [[], []]}, {"lte": [["7"], ["1"]], "nr": [[], []]}) is False
+    assert in_use({"lte": [[], []], "nr": [["78"], ["41"]]}, {"lte": [[], []], "nr": [["78"], []]}) is False
+
+
+def test_a_profile_with_the_same_bands_in_another_order_is_in_use():
+    assert in_use({"lte": [["7"], ["1", "3"]], "nr": [["78"], []]},
+                  {"lte": [["7"], ["3", "1"]], "nr": [["78"], []]}) is True

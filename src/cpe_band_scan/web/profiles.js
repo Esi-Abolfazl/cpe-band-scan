@@ -7,7 +7,7 @@ function profileLockWords(lock) {
 
 function profileInUse(profile) {
   const lock = state.status.lock;
-  return ["lte", "nr"].every((side) => sameBands(profile.lock[side][0], lock[side][0]));
+  return ["lte", "nr"].every((side) => [0, 1].every((part) => sameBands(profile.lock[side][part], lock[side][part])));
 }
 
 function profilesCard() {
