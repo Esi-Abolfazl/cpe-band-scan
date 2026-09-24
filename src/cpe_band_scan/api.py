@@ -114,11 +114,11 @@ def apply(session, body, id, query):
     with session.lock:
         session.require_idle()
         router = session.require_router()
-        current = lockfreq.read_lock(router)     # an absent side keeps the lock it has
+        current = lockfreq.read_lock(router)     # an absent side keeps the whole lock it has
         lte = body["lte"] if "lte" in body else current["lte"][0]
         scell = body["scell"] if "scell" in body else current["lte"][1]
-        nr = body["nr"] if "nr" in body else current["nr"][0]
-        lockfreq.lock(router, lte=lte, lte_scell=scell, nr=nr)
+        nr, nr_scell = (body["nr"], []) if "nr" in body else current["nr"]
+        lockfreq.lock(router, lte=lte, lte_scell=scell, nr=nr, nr_scell=nr_scell)
     return {"applied": True}
 
 
