@@ -6,10 +6,17 @@ from __future__ import annotations
 import json
 import os
 import re
+import tempfile
+import threading
 from datetime import datetime
 from pathlib import Path
 
 from .config import home
+from .router import RouterError
+
+# ponytail: one lock per process. Two `ui` processes on the same home can still interleave a
+# profile edit; an O_EXCL lock file (no fcntl on Windows) is the upgrade if that ever happens.
+_LOCK = threading.RLock()
 
 RUN_ID = re.compile(r"\A[0-9]{8}-[0-9]{6}(-[0-9]+)?\Z")
 
@@ -28,35 +35,57 @@ def settings_path() -> Path:
     return home() / "settings.json"
 
 
-def settings() -> dict:
+def _write(path: Path, payload) -> None:
+    """Whole or not at all: the new text lands beside the old file and replaces it in one step.
+    mkstemp makes the file owner-only, which the settings file needs for the password."""
+    handle, temporary = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.")
     try:
-        return json.loads(settings_path().read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return {}
+        with os.fdopen(handle, "w", encoding="utf-8") as file:
+            json.dump(payload, file, indent=2)
+            file.flush()
+            os.fsync(file.fileno())
+        os.replace(temporary, path)
+    except BaseException:
+        os.unlink(temporary)
+        raise
 
 
-def _write_settings(kept: dict) -> dict:
+def settings() -> dict:
+    """A settings file that no longer parses is moved to settings.json.bad, kept for the person,
+    and the app starts over from defaults: only an address and a login are lost."""
     path = settings_path()
-    path.write_text(json.dumps(kept, indent=2), encoding="utf-8")
-    os.chmod(path, 0o600)
-    return kept
+    with _LOCK:
+        try:
+            kept = json.loads(path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            return {}
+        except ValueError:
+            kept = None
+        if not isinstance(kept, dict):
+            os.replace(path, path.with_name(path.name + ".bad"))
+            return {}
+        return kept
 
 
 def save_settings(**values) -> dict:
-    kept = dict(settings())
-    kept.update({key: value for key, value in values.items()
-                 if key in SETTINGS_KEYS and key != "password" and value})
-    return _write_settings(kept)
+    with _LOCK:
+        kept = settings()
+        kept.update({key: value for key, value in values.items()
+                     if key in SETTINGS_KEYS and key != "password" and value})
+        _write(settings_path(), kept)
+        return kept
 
 
 def remember_password(password: str | None) -> dict:
     """Store the password when given, drop it when None or empty. The only path that writes it."""
-    kept = dict(settings())
-    if password:
-        kept["password"] = password
-    else:
-        kept.pop("password", None)
-    return _write_settings(kept)
+    with _LOCK:
+        kept = settings()
+        if password:
+            kept["password"] = password
+        else:
+            kept.pop("password", None)
+        _write(settings_path(), kept)
+        return kept
 
 
 def remembered_password() -> str:
@@ -70,32 +99,36 @@ def profiles_path() -> Path:
 
 
 def list_profiles() -> list[dict]:
+    """Profiles are the person's own work: a file that no longer parses is an error they are
+    shown, never a list that reads as empty and is then saved over."""
+    path = profiles_path()
     try:
-        rows = json.loads(profiles_path().read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+        rows = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
         return []
+    except ValueError:
+        rows = None
+    if not isinstance(rows, list):
+        raise RouterError("store_unreadable", str(path))
     return sorted((row for row in rows if isinstance(row, dict)),
                   key=lambda row: (row.get("saved", ""), row.get("id", "")), reverse=True)
 
 
-def _write_profiles(rows: list[dict]) -> None:
-    profiles_path().write_text(json.dumps(rows, indent=2), encoding="utf-8")
-
-
 def save_profile(name: str, carrier: str, lock: dict) -> dict:
-    when = datetime.now()
-    rows = list_profiles()
-    taken = {row["id"] for row in rows}
-    base = f"{when:%Y%m%d-%H%M%S}"
-    candidate, suffix = base, 1
-    while candidate in taken:
-        suffix += 1
-        candidate = f"{base}-{suffix}"
-    profile = {"id": candidate, "name": (name or default_name(carrier, when)).strip(),
-               "carrier": carrier or "", "saved": when.isoformat(timespec="seconds"),
-               "lock": {side: [list(lock[side][0]), list(lock[side][1])] for side in ("lte", "nr")}}
-    _write_profiles(rows + [profile])
-    return profile
+    with _LOCK:
+        when = datetime.now()
+        rows = list_profiles()
+        taken = {row["id"] for row in rows}
+        base = f"{when:%Y%m%d-%H%M%S}"
+        candidate, suffix = base, 1
+        while candidate in taken:
+            suffix += 1
+            candidate = f"{base}-{suffix}"
+        profile = {"id": candidate, "name": (name or default_name(carrier, when)).strip(),
+                   "carrier": carrier or "", "saved": when.isoformat(timespec="seconds"),
+                   "lock": {side: [list(lock[side][0]), list(lock[side][1])] for side in ("lte", "nr")}}
+        _write(profiles_path(), rows + [profile])
+        return profile
 
 
 def load_profile(profile_id: str) -> dict:
@@ -106,21 +139,23 @@ def load_profile(profile_id: str) -> dict:
 
 
 def rename_profile(profile_id: str, name: str) -> dict:
-    rows = list_profiles()
-    found = next((row for row in rows if row.get("id") == profile_id), None)
-    if found is None:
-        raise KeyError(profile_id)
-    found["name"] = name.strip() or found["name"]
-    _write_profiles(rows)
-    return found
+    with _LOCK:
+        rows = list_profiles()
+        found = next((row for row in rows if row.get("id") == profile_id), None)
+        if found is None:
+            raise KeyError(profile_id)
+        found["name"] = name.strip() or found["name"]
+        _write(profiles_path(), rows)
+        return found
 
 
 def delete_profile(profile_id: str) -> None:
-    rows = list_profiles()
-    kept = [row for row in rows if row.get("id") != profile_id]
-    if len(kept) == len(rows):
-        raise KeyError(profile_id)
-    _write_profiles(kept)
+    with _LOCK:
+        rows = list_profiles()
+        kept = [row for row in rows if row.get("id") != profile_id]
+        if len(kept) == len(rows):
+            raise KeyError(profile_id)
+        _write(profiles_path(), kept)
 
 
 def default_name(carrier: str, when: datetime | None = None) -> str:
@@ -147,15 +182,16 @@ def _path(run_id: str) -> Path:
 
 
 def save(run: dict, name: str | None = None) -> dict:
-    when = datetime.now()
-    stored = dict(run)
-    carrier = (stored.get("device") or {}).get("carrier", "")
-    stored["name"] = (name or stored.get("name") or default_name(carrier, when)).strip()
-    given = str(stored.get("id") or "")
-    stored["id"] = given if RUN_ID.match(given) else _unique_id(when)
-    stored["saved"] = when.isoformat(timespec="seconds")
-    (runs_dir() / f"{stored['id']}.json").write_text(json.dumps(stored, indent=2), encoding="utf-8")
-    return stored
+    with _LOCK:                 # the id is minted from what is on disk
+        when = datetime.now()
+        stored = dict(run)
+        carrier = (stored.get("device") or {}).get("carrier", "")
+        stored["name"] = (name or stored.get("name") or default_name(carrier, when)).strip()
+        given = str(stored.get("id") or "")
+        stored["id"] = given if RUN_ID.match(given) else _unique_id(when)
+        stored["saved"] = when.isoformat(timespec="seconds")
+        _write(runs_dir() / f"{stored['id']}.json", stored)
+        return stored
 
 
 def best_of(run: dict) -> str:
@@ -184,10 +220,11 @@ def load(run_id: str) -> dict:
 
 
 def rename(run_id: str, name: str) -> dict:
-    run = load(run_id)
-    run["name"] = name.strip() or run["name"]
-    _path(run_id).write_text(json.dumps(run, indent=2), encoding="utf-8")
-    return run
+    with _LOCK:
+        run = load(run_id)
+        run["name"] = name.strip() or run["name"]
+        _write(_path(run_id), run)
+        return run
 
 
 def delete(run_id: str) -> None:

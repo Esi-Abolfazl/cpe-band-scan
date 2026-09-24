@@ -223,6 +223,10 @@ bands through a different interface, which the app doesn't speak yet.
 Lock profiles, terminal runs and the router address live in `~/.cpe-band-scan`. The password is
 stored there only if you tick Remember, and only until you press Forget.
 
+Every file is replaced whole, so a crash mid-save leaves the previous version. A `profiles.json`
+that no longer reads is reported and left untouched; a broken `settings.json` is moved to
+`settings.json.bad` and the app starts from defaults.
+
 ## Try it without a router
 
 ```bash
