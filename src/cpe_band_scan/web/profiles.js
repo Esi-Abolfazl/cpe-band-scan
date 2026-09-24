@@ -53,7 +53,7 @@ function profilesCard() {
 }
 
 async function refreshProfiles() {
-  try { state.profiles = (await api("GET", routes.profiles)).profiles; } catch { state.profiles = []; }
+  try { state.profiles = (await api("GET", routes.profiles)).profiles; } catch (failure) { showError(failure.message); }
 }
 
 async function onSaveProfile() {

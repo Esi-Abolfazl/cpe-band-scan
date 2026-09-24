@@ -1,6 +1,7 @@
 """What the page does and sends, executed in Node rather than read from its source."""
 import json
 
+from cpe_band_scan import api
 from tests import page
 
 RESULTS = {"sides": {"lte": {"order": ["B7", "auto", "B3"], "sets": {"B7": ["7"], "auto": [], "B3": ["3"]},
@@ -54,3 +55,16 @@ def test_a_profile_that_differs_only_in_its_secondary_carriers_is_not_in_use():
 def test_a_profile_with_the_same_bands_in_another_order_is_in_use():
     assert in_use({"lte": [["7"], ["1", "3"]], "nr": [["78"], []]},
                   {"lte": [["7"], ["3", "1"]], "nr": [["78"], []]}) is True
+
+
+def test_a_failed_profile_read_keeps_the_list_and_says_why():
+    """Regression: any failure replaced the list with [], telling the person they had no saved
+    profiles when the file was only unreadable."""
+    ran = page.run(["app.js", "test.js", "profiles.js"], """
+        state.profiles = [{ id: "a", name: "Home" }];
+        await refreshProfiles();
+        return state.profiles.map((profile) => profile.name);""",
+        responses={f"GET {api.ROUTES['profiles']}": {"status": 409, "body": {
+            "error": "store_unreadable", "message": "Can't read profiles.json"}}})
+    assert ran["result"] == ["Home"]
+    assert ran["banner"] == "Can't read profiles.json"
