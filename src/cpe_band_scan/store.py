@@ -216,7 +216,11 @@ def list_runs() -> list[dict]:
 
 
 def load(run_id: str) -> dict:
-    return json.loads(_path(run_id).read_text(encoding="utf-8"))
+    path = _path(run_id)
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except ValueError:
+        raise RouterError("store_unreadable", str(path)) from None
 
 
 def rename(run_id: str, name: str) -> dict:

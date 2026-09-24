@@ -37,8 +37,9 @@ safety in `store.py`, page logic in `web/*.js`, words in `copy.py`.
 - **N1 (P2, data loss)** — a corrupt `profiles.json` reads as `[]` (`store.py:75`), and the next
   `save_profile` writes `rows + [profile]` (`store.py:97`) over it: every saved profile is gone.
   Same shape for `settings.json` (`store.py:34` → `:46`). This is the sharp end of #8.
-- **N2 (P3)** — `cli test` cancelled before the first sample: `trace` returns with no
-  `trace_done`, `run` stays `None`, `store.save(None)` (`cli.py:221`) → "crash" message.
+- ~~**N2 (P3)**~~ — withdrawn on implementation: `cli test` calls `scanner.trace(router)` with
+  no cancel callback and the fixed 120 s / 10 s, so a zero-sample test cannot happen there;
+  Ctrl-C leaves through the `KeyboardInterrupt` branch before any save.
 - **N3 (P3)** — `trace()` grades with LTE criteria too (`scanner.py:216`); an NR-only test gets
   an LTE grade. Same root as #3 and closed by the same `grade(side=…)` change.
 
@@ -148,9 +149,8 @@ Each task: write the failing test, see it fail, fix, see it pass, run the three 
 - `runs` and `show` move inside the `try`; `KeyError` → new `run_not_found` catalogue line, exit 1.
 - `show` of `kind == "test"` prints the summary with the page's `traceSummary` keys
   (`floor, sinr, rsrq, rsrp, five_g, carriers`) through `copy.COLUMNS`.
-- `cli test` with no `trace_done` prints `PROGRESS.cancelled` and saves nothing.
 - Tests (`tests/test_cli.py`): saved test prints 7.5; missing id → exit 1, catalogue sentence,
-  no traceback; zero-sample test saves no file.
+  no traceback; an unreadable run file → `store_unreadable`, exit 1.
 
 **Task 12 · A failed profile read keeps the list (#11) — needs D3.**
 - `refreshProfiles`: keep `state.profiles` on failure and `showError(failure.message)`.

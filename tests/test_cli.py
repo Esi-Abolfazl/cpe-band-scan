@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from cpe_band_scan import cli, copy
+from cpe_band_scan import cli, copy, store
 
 WEB = Path(__file__).resolve().parents[1] / "src" / "cpe_band_scan" / "web"
 WEB_APP_JS = "\n".join(p.read_text(encoding="utf-8") for p in sorted(WEB.glob("*.js")))
@@ -251,3 +251,27 @@ def test_render_opens_the_scan_with_the_bypass_verdict_when_there_is_one():
     assert copy.NOTES["probe_failed"] in line
     plain = cli.render({"type": "run_start", "sides": ["lte"], "expect_5g": True, "baseline": {}})
     assert "VPN" not in plain
+
+
+def test_show_prints_a_saved_tests_summary(capsys):
+    """Regression: every run was drawn as a scan table, so a saved test printed empty headers."""
+    summary = {"floor": 7.5, "sinr": 9.0, "rsrq": -9.0, "rsrp": -80.0, "has5g": True,
+               "band": "B7(N78)", "carriers": [{"band": "B7"}, {"band": "N78"}]}
+    saved = store.save({"kind": "test", "summary": summary, "samples": []}, name="Evening")
+    assert cli.main(["show", saved["id"]]) == 0
+    out = capsys.readouterr().out
+    assert "7.5" in out and "B7 + N78" in out and copy.COLUMNS["floor"]["label"] in out
+
+
+def test_show_of_a_run_that_is_missing_or_unreadable_says_so_without_a_traceback(isolated_home, tmp_path, capsys):
+    assert cli.main(["show", "20260101-000000"]) == 1
+    assert copy.ERRORS["run_not_found"].split("{")[0] in capsys.readouterr().err
+    (tmp_path / "runs").mkdir(exist_ok=True)
+    (tmp_path / "runs" / "20260101-000001.json").write_text("{not json", encoding="utf-8")
+    assert cli.main(["show", "20260101-000001"]) == 1
+    assert copy.ERRORS["store_unreadable"].split("{")[0] in capsys.readouterr().err
+
+
+def test_the_test_summary_matches_the_pages_rows():
+    match = re.search(r"TRACE_KEYS\s*=\s*\[(.*?)\]", WEB_APP_JS, re.S)
+    assert [key.strip().strip('"') for key in match.group(1).split(",")] == list(cli.TRACE_KEYS)

@@ -147,6 +147,19 @@ def results_table(run: dict) -> str:
     return "\n".join(lines)
 
 
+TRACE_KEYS = ("floor", "sinr", "rsrq", "rsrp", "five_g", "carriers")   # test.js mirrors it
+
+
+def trace_table(run: dict) -> str:
+    """A saved test's summary, the rows the page shows under the test card."""
+    summary = run["summary"]
+    value = {"floor": f"{summary['floor']:g} dB", "sinr": f"{summary['sinr']:g} dB",
+             "rsrq": f"{summary['rsrq']:g} dB", "rsrp": f"{summary['rsrp']:g} dBm",
+             "five_g": "yes" if summary["has5g"] else "no",
+             "carriers": " + ".join(c["band"] for c in summary.get("carriers") or []) or summary["band"]}
+    return "\n".join(f"{copy.COLUMNS[key]['label']}: {value[key]}" for key in TRACE_KEYS)
+
+
 def speed_note(run: dict) -> str:
     """The sentence that says what the speed and ping columns mean, or nothing."""
     report = run.get("speed")
@@ -180,23 +193,25 @@ def main(argv=None) -> int:
     if command == "ui":
         from .server import serve
         return serve(port=args.port, open_browser=not args.no_browser)
-    if command == "runs":
-        rows = store.list_runs()
-        if not rows:
-            print(copy.NOTES["empty_runs"])
-        for row in rows:
-            print(f"{row['id']}  {row['name']}  ({row['kind']}, best {row['best'] or '-'})")
-        return 0
-    if command == "show":
-        run = store.load(args.run_id)
-        print(run["name"])
-        print(results_table(run))
-        note = speed_note(run)
-        if note:
-            print(note)
-        return 0
-
     try:
+        if command == "runs":
+            rows = store.list_runs()
+            if not rows:
+                print(copy.NOTES["empty_runs"])
+            for row in rows:
+                print(f"{row['id']}  {row['name']}  ({row['kind']}, best {row['best'] or '-'})")
+            return 0
+        if command == "show":
+            try:
+                run = store.load(args.run_id)
+            except KeyError:
+                raise RouterError("run_not_found", args.run_id) from None
+            print(run["name"])
+            print(trace_table(run) if run.get("kind") == "test" else results_table(run))
+            note = speed_note(run)
+            if note:
+                print(note)
+            return 0
         router, device = connect(args)
         print(f"{device.model} · firmware {device.firmware} · {device.carrier or '-'}")
         if command == "status":

@@ -1,5 +1,7 @@
 "use strict";
 // ---- test ------------------------------------------------------------------
+const TRACE_KEYS = ["floor", "sinr", "rsrq", "rsrp", "five_g", "carriers"];   // cli.py mirrors it
+
 function pickable() {
   const run = state.results;
   if (!run || !run.sides) return [];
@@ -105,7 +107,6 @@ function testCard() {
 }
 
 function traceSummary(run) {
-  const keys = ["floor", "sinr", "rsrq", "rsrp", "five_g", "carriers"];
   const summary = run.summary;
   const value = {
     floor: num(summary.floor, "dB"), sinr: num(summary.sinr, "dB"), rsrq: num(summary.rsrq, "dB"),
@@ -113,7 +114,7 @@ function traceSummary(run) {
     carriers: (summary.carriers || []).map((carrier) => carrier.band).join(" + ") || summary.band,
   };
   return el("table", { class: "summary" },
-    el("tbody", {}, keys.map((key) => el("tr", {},
+    el("tbody", {}, TRACE_KEYS.map((key) => el("tr", {},
       el("th", { scope: "row" }, help("COLUMNS", key)),
       el("td", { class: "num" }, value[key])))));
 }

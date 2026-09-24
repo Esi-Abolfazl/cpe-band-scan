@@ -200,6 +200,7 @@ ERRORS = {
     "bad_request": "CPE Band Scan got a request it can't act on ({detail}). Check what was sent and "
                    "try again.",
     "crash": "Stopped on an unexpected problem ({detail}). Check your bands before scanning again.",
+    "run_not_found": "There's no saved run {detail}. List the saved ones with `cpe-band-scan runs`.",
     "store_unreadable": "Can't read {detail}, so it was left untouched. Fix or remove that file, then "
                         "try again.",
 }
