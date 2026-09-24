@@ -1,5 +1,5 @@
 ---
-status: open
+status: done
 area: tooling
 date: 2026-09-19
 origin: none — found during the pip → uv toolchain migration, when the README line finally had an interpreter again

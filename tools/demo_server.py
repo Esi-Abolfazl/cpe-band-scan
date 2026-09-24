@@ -1,4 +1,4 @@
-"""Run the page against a fake router: python tools/demo_server.py
+"""Run the page against a fake router: uv run tools/demo_server.py
 
 Its own fixture (not the test suite's): a short band list on each side, and a device/signal
 reading tied to whichever band is actually locked right now, each with its own fixed quality.
@@ -89,5 +89,5 @@ _READINGS = [{"latency_ms": 62, "jitter_ms": 9, "mbps": 48.3, "bytes": 30_000_00
 api.PROBE = lambda url: FakeProbe(url, bypass="confirmed", readings=_READINGS * 3)
 
 session = server.Session(router_factory=_demo_router)
-session.connect("192.168.8.1", "demo")
+session.connect("192.168.8.1", "demo", "admin")
 server.serve(port=8766, session=session)
