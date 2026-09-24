@@ -52,8 +52,8 @@ Node (the `check-repo` runner only) is pinned in `.nvmrc`.
 Adopted on 2026-09-16 with six rules violated; every row burned down on 2026-09-17
 (`docs/adoption-scorecard.md` § Burn-down). `gates-baseline.json` is empty and every rule it held is
 now enforced by `check-repo` with no exemption. **The ratchet stays:** a rule the repo starts
-violating again is baselined there, never exempted silently, and `scripts/check_baseline.py` fails
-the PR that grows a count. Two files are exempt under `file-size`: the framework's own
+violating again is baselined there by hand, in its own reviewed diff, never exempted silently;
+`scripts/check_baseline.py` fails the PR that grows a count, and its `--write` only lowers one. Two files are exempt under `file-size`: the framework's own
 `scripts/check-repo.mjs`, and `copy.py` (2026-09-18, owner's call — the word catalogue grows with
 the product's vocabulary; see `docs/adoption-scorecard.md`).
 

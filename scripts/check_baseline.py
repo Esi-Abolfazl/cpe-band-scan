@@ -2,7 +2,8 @@
 
 Each counter in gates-baseline.json is a regex over a set of files and the count committed at
 adoption. This exits 1 when any count grew, and asks for the file to be lowered when one fell,
-so the baseline only ever moves down. `--write` records the current counts.
+so the baseline only ever moves down. `--write` records the current counts only when none grew;
+a new counter is added to gates-baseline.json by hand, in its own reviewed diff.
 """
 from __future__ import annotations
 
@@ -26,13 +27,12 @@ def main(argv: list[str]) -> int:
     grew, fell = [], []
     for name, counter in baseline.items():
         now = count(counter)
-        if "--write" in argv:
-            counter["count"] = now
-        elif now > counter["count"]:
+        if now > counter["count"]:
             grew.append(f"{name}: {now} > baseline {counter['count']} ({counter['rule']})")
         elif now < counter["count"]:
             fell.append(f"{name}: {now} < baseline {counter['count']} — lower it: uv run scripts/check_baseline.py --write")
-    if "--write" in argv:
+            counter["count"] = now
+    if "--write" in argv and not grew:
         BASELINE.write_text(json.dumps(baseline, indent=2) + "\n", encoding="utf-8")
         print("check-baseline: written")
         return 0

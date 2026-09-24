@@ -45,3 +45,13 @@ def test_fallen_count_fails_until_written(repo):
 
 def test_the_committed_baseline_matches_the_tree():
     assert check_baseline.main([]) == 0
+
+
+def test_write_refuses_to_raise_a_count_and_leaves_the_file_as_it_was(repo, capsys):
+    """Regression: --write recorded whatever it found, so a grown count became the new baseline
+    and the next check passed - the ratchet turned both ways."""
+    repo(1)
+    before = check_baseline.BASELINE.read_bytes()
+    assert check_baseline.main(["--write"]) == 1
+    assert "routes: 2 > baseline 1 (tst-04)" in capsys.readouterr().err
+    assert check_baseline.BASELINE.read_bytes() == before
