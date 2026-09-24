@@ -85,3 +85,26 @@ def test_a_reloaded_test_says_what_it_changes_the_way_the_live_page_did():
     assert resumed_words({"lte": [], "scell": [], "nr": None}) == live
     as_it_is = resumed_words({"lte": None, "scell": [], "nr": None})
     assert as_it_is == copy.NOTES["test_target_current"]
+
+
+def floor_cells(run):
+    return page.run(["app.js", "results.js"], f"""
+        const text = (node) => node.nodeType === 3 ? node.textContent
+          : node.children.map(text).join("");
+        const at = columnKeys({json.dumps(run)}).indexOf("floor");
+        return resultsTable({json.dumps(run)}).map((block) => {{
+          const table = block.children.find((node) => node.className === "table-scroll").children[0];
+          return table.children[1].children.map((row) => text(row.children[at]));
+        }});""")["result"]
+
+
+def test_each_table_shows_the_floor_its_side_is_rated_on():
+    """Regression: the 5G table showed the 4G floor beside a grade that rests on the 5G one."""
+    row = {"grade": "good", "has5g": True, "floor": -8, "sinr": 3, "rsrq": -10, "rsrp": -90,
+           "nrsinr": 14, "band": "B3(N78)"}
+    run = {"sides": {"lte": {"order": ["B3"], "sets": {"B3": ["3"]}, "skipped": {}, "results": {"B3": row}},
+                     "nr": {"order": ["N78"], "sets": {"N78": ["78"]}, "skipped": {},
+                            "results": {"N78": dict(row, nrfloor=11)}}}}
+    assert floor_cells(run) == [["-8"], ["11"]]
+    run["sides"]["nr"]["results"]["N78"].pop("nrfloor")      # saved before the 5G floor existed
+    assert floor_cells(run)[1] == ["—"]

@@ -49,7 +49,7 @@ def test_one_accent_and_no_question_marks():
 def test_numbers_are_tabular_and_go_through_one_helper():
     assert "font-variant-numeric: tabular-nums" in block(".num {")
     assert "function num(" in JS
-    assert "num(row.floor)" in JS and "num(row.rsrp)" in JS
+    assert "num(row[floors[side]])" in JS and "num(row.rsrp)" in JS
 
 
 def test_the_logs_are_built_once_and_appended_to():

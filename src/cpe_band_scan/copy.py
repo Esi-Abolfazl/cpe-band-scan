@@ -162,7 +162,7 @@ COLUMNS = {
     "rank": {"label": "#", "help": "Position in the ranking. The top row held the steadiest signal."},
     "band": {"label": "Band", "help": "The band that was locked. Auto is the router's own choice."},
     "grade": {"label": "Rating", "help": "Excellent and Good are safe picks."},
-    "floor": {"label": "Lowest", "help": "Lowest SINR seen, in dB. Above 0 usable, above 5 comfortable."},
+    "floor": {"label": "Lowest", "help": "Lowest SINR seen, in dB, of the carrier the table is rated on. Above 0 usable, above 5 comfortable."},
     "sinr": {"label": "Typical", "help": "The middle SINR reading of the measurement, in dB. "
                                                   "Higher is better."},
     "rsrq": {"label": "Channel", "help": "RSRQ in dB. Better than -12 is healthy."},

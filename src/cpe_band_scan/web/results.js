@@ -58,7 +58,7 @@ function resultsTable(run) {
         el("td", { class: "band" }, el("b", {}, name), isBest ? el("span", { class: "badge best" }, copy.NOTES.best) : null),
         el("td", { class: `grade-${row.grade}` }, copy.GRADES[row.grade]),
         el("td", {}, row.has5g ? "yes" : "no"),
-        el("td", { class: "num" }, num(row.floor)),
+        el("td", { class: "num" }, num(row[floors[side]])),
         el("td", { class: "num" }, num(row.sinr)),
         el("td", { class: "num" }, num(row.rsrq)),
         el("td", { class: "num" }, num(row.rsrp)),

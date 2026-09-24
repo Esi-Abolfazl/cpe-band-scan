@@ -123,14 +123,16 @@ def column_keys(run: dict) -> list[str]:
     return keys
 
 
-def _cells(position: int, name: str, row: dict) -> dict:
+def _cells(position: int, name: str, row: dict, side: str) -> dict:
     probe = row.get("speed") or {}
     answered = bool(probe) and "error" not in probe
+    floor = row.get(metrics.FLOOR[side])        # a run saved before 2026-09-24 has no nrfloor
     return {"rank": str(position), "band": name, "grade": copy.GRADES[row["grade"]],
             "five_g": "yes" if row["has5g"] else "no",
             "speed": f"{probe['mbps']:g}" if answered else copy.NOTES["probe_no_answer"],
             "ping": str(probe["latency_ms"]) if answered else copy.NOTES["probe_no_answer"],
-            "floor": f"{row['floor']:g}", "sinr": f"{row['sinr']:g}", "rsrq": f"{row['rsrq']:g}",
+            "floor": "—" if floor is None or floor != floor else f"{floor:g}",
+            "sinr": f"{row['sinr']:g}", "rsrq": f"{row['rsrq']:g}",
             "rsrp": f"{row['rsrp']:g}", "nr_sinr": f"{row['nrsinr']:g}", "carriers": row["band"]}
 
 
@@ -142,7 +144,7 @@ def results_table(run: dict) -> str:
     for side, record in run.get("sides", {}).items():
         for position, name in enumerate(record["order"] + [n for n in record["results"]
                                                            if n not in record["order"]], 1):
-            cells = _cells(position, name, record["results"][name])
+            cells = _cells(position, name, record["results"][name], side)
             lines.append("| " + " | ".join(cells[key] for key in keys) + " |")
     return "\n".join(lines)
 

@@ -273,3 +273,11 @@ def test_a_handler_that_crashes_still_answers_in_json(connected, monkeypatch):
     monkeypatch.setitem(api.HANDLERS, ("POST", "clear"), lambda *args: 1 / 0)
     status, answer = raw(port, "POST", ROUTES["clear"], b"{}", session.token)
     assert (status, answer["error"]) == (500, "crash")
+
+
+def test_the_page_gets_the_floor_each_side_is_rated_on_from_the_ranking_rule(live):
+    """The page reads which floor a side rests on from metrics.FLOOR, never its own copy."""
+    from cpe_band_scan import metrics
+    _, port = live
+    _, body = call(port, "GET", "/")
+    assert f'"floors": {json.dumps(metrics.FLOOR)}' in body

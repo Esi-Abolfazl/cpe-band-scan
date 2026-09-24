@@ -1,5 +1,5 @@
 "use strict";
-const { token, copy, defaults, routes } = window.CPE_BAND_SCAN;
+const { token, copy, defaults, routes, floors } = window.CPE_BAND_SCAN;
 
 const state = {
   device: null, status: null, profiles: [], run: null, results: null, suggestedName: "", profileName: null,

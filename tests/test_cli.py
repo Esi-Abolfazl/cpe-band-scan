@@ -275,3 +275,13 @@ def test_show_of_a_run_that_is_missing_or_unreadable_says_so_without_a_traceback
 def test_the_test_summary_matches_the_pages_rows():
     match = re.search(r"TRACE_KEYS\s*=\s*\[(.*?)\]", WEB_APP_JS, re.S)
     assert [key.strip().strip('"') for key in match.group(1).split(",")] == list(cli.TRACE_KEYS)
+
+
+def test_the_5g_rows_show_the_5g_floor_and_a_dash_when_the_run_predates_it():
+    row = {"grade": "good", "has5g": True, "floor": -8.0, "sinr": 3.0, "rsrq": -10.0, "rsrp": -90.0,
+           "nrsinr": 14.0, "band": "B3(N78)"}
+    run = {"sides": {"lte": {"order": ["B3"], "results": {"B3": row}},
+                     "nr": {"order": ["N78", "N41"], "results": {"N78": dict(row, nrfloor=11.0), "N41": row}}}}
+    at = cli.column_keys(run).index("floor") + 1
+    floors = [line.split("|")[at].strip() for line in cli.results_table(run).splitlines()[2:]]
+    assert floors == ["-8", "11", "—"]

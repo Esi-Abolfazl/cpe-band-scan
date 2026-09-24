@@ -1,5 +1,5 @@
 ---
-status: open
+status: done
 area: module
 date: 2026-09-24
 origin: .agents/plans/2026-09-23-project-review-fixes.md (Task 3)
@@ -31,6 +31,12 @@ ranking rule.
 
 ## Acceptance
 
-- [ ] `uv run pytest -q tests/test_cli.py` → a saved NR scan prints its `nrfloor` in Lowest.
-- [ ] `uv run pytest -q tests/test_parity.py` → page and terminal pick the same floor per side.
-- [ ] `uv run pytest -q` → all pass.
+- [x] `uv run pytest -q tests/test_cli.py` → a saved NR scan prints its `nrfloor` in Lowest.
+- [x] `uv run pytest -q tests/test_parity.py` → page and terminal pick the same floor per side.
+- [x] `uv run pytest -q` → all pass.
+
+## Resolution (2026-09-24)
+
+The page bootstrap carries `floors: metrics.FLOOR`. `results.js` renders `row[floors[side]]` and
+`cli._cells` reads `metrics.FLOOR[side]`. A missing or NaN floor prints "—", the page's `num()`
+dash, not the en dash this contract named, so page and terminal agree.

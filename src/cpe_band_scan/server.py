@@ -17,7 +17,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from . import api, config, copy, scanner, speed, store
+from . import api, config, copy, metrics, scanner, speed, store
 from .config import DEFAULT_URL
 from .device import probe
 from .router import Router, RouterError, host
@@ -159,6 +159,7 @@ class Handler(BaseHTTPRequestHandler):
     def _page(self):
         saved = store.settings()
         bootstrap = json.dumps({"token": self.session.token, "copy": copy.bundle(), "routes": api.ROUTES,
+                                "floors": metrics.FLOOR,
                                 "defaults": {"url": host(saved.get("router_url", DEFAULT_URL)),
                                              "username": saved.get("username") or config.username(),
                                              "remembered": bool(saved.get("password"))}})
