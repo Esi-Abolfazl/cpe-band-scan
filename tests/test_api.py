@@ -23,3 +23,15 @@ def test_applying_one_side_keeps_the_other_sides_secondary_carriers(body, kept, 
     session.connect("192.168.8.1", "pw", "admin")
     api.apply(session, body, "", {})
     assert fake.posts[-1][1][kept]["all_bands"] == expected
+
+
+def test_a_test_request_names_automatic_with_an_empty_list_and_keeps_an_absent_side(monkeypatch):
+    make, fake = _locked_router_factory(_BOTH_WITH_SECONDARIES)
+    session = server.Session(router_factory=make)
+    session.connect("192.168.8.1", "pw", "admin")
+    monkeypatch.setattr(api, "SLEEP", lambda seconds: None)
+    api.test(session, {"seconds": 10, "gap": 10, "lte": []}, "", {})
+    session.thread.join(5)
+    first = fake.posts[0][1]
+    assert first["lte_info"]["lock_mode"] == "0"
+    assert first["nr_info"]["all_bands"] == "41,78"

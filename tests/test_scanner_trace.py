@@ -73,3 +73,11 @@ def test_a_5g_only_test_is_rated_on_the_5g_carrier():
     router, _ = build([weak_anchor] * 50)
     events = list(scanner.trace(router, seconds=20, gap=10, sleep=lambda s: None, nr=["78"]))
     assert events[-1]["run"]["summary"]["grade"] == "excellent"
+
+def test_a_test_of_automatic_clears_that_side_and_puts_the_arriving_lock_back():
+    """An empty band list means automatic for the test; only an absent side keeps its lock."""
+    router, session = build([signal(8)] * 50, lock=ARRIVES_LOCKED)
+    list(scanner.trace(router, seconds=20, gap=10, sleep=lambda s: None, lte=[]))
+    writes = [p[1] for p in session.posts if p[0] == "net/lock-freq"]
+    assert writes[0]["lte_info"]["lock_mode"] == "0"
+    assert writes[-1]["lte_info"]["freq_infos"]["freq_info"] == [{"band": "7"}]

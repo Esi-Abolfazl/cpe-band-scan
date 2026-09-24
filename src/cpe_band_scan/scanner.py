@@ -190,16 +190,18 @@ def scan(router: Router, device, sides=("lte", "nr"), bands=None, cancelled=None
 
 
 def trace(router: Router, seconds: int = 120, gap: int = 10, cancelled=None, sleep=time.sleep,
-          lte=(), nr=(), lte_scell=()):
-    """Watch a lock for a while. With no bands given it watches whatever is locked now and
-    touches nothing; with `lte` or `nr` it locks that band for the test and puts the arriving
-    lock back afterwards, whatever happens in between."""
+          lte=None, nr=None, lte_scell=()):
+    """Watch a lock for a while. A side left as None keeps whatever is locked now; a side given
+    a band list is locked to it for the test, [] meaning automatic, and the arriving lock goes
+    back afterwards, whatever happens in between. With neither side given nothing is written."""
     cancelled = cancelled or (lambda: False)
     original = lockfreq.read_lock(router)
+    changes = lte is not None or nr is not None
     try:
-        if lte or nr:
-            lockfreq.lock(router, lte=lte or original["lte"][0], lte_scell=lte_scell if lte else original["lte"][1],
-                          nr=nr or original["nr"][0], nr_scell=() if nr else original["nr"][1])
+        if changes:
+            lte_lock = original["lte"] if lte is None else (lte, lte_scell)
+            nr_lock = original["nr"] if nr is None else (nr, ())
+            lockfreq.lock(router, lte=lte_lock[0], lte_scell=lte_lock[1], nr=nr_lock[0], nr_scell=nr_lock[1])
             sleep(SETTLE)
         started, rows = _now(), []
         yield {"type": "trace_start", "seconds": seconds, "gap": gap, "lock": lockfreq.read_lock(router)}
@@ -220,6 +222,6 @@ def trace(router: Router, seconds: int = 120, gap: int = 10, cancelled=None, sle
                "lock": lockfreq.read_lock(router), "samples": rows, "summary": summary}
         yield {"type": "trace_done", "run": run}
     finally:
-        if lte or nr:
+        if changes:
             lockfreq.lock(router, lte=original["lte"][0], lte_scell=original["lte"][1],
                           nr=original["nr"][0], nr_scell=original["nr"][1])

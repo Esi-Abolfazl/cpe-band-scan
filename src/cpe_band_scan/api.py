@@ -97,8 +97,8 @@ def test(session, body, id, query):
     gap = int(body["gap"]) if "gap" in body else 10
     if not 0 < gap <= seconds:
         raise ValueError(f"seconds={seconds} gap={gap}")
-    lte = lockfreq.bands_of(body.get("lte") or [])
-    nr = lockfreq.bands_of(body.get("nr") or [])
+    lte = lockfreq.bands_of(body["lte"]) if "lte" in body else None   # [] = automatic for the test;
+    nr = lockfreq.bands_of(body["nr"]) if "nr" in body else None      # absent = keep the lock
     scell = lockfreq.bands_of(body.get("scell") or [])
     session.start("test", lambda cancelled: scanner.trace(
         router, seconds=seconds, gap=gap, cancelled=cancelled, sleep=SLEEP, lte=lte, nr=nr, lte_scell=scell))

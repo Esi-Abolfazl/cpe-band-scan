@@ -248,6 +248,7 @@ NOTES = {
     "test_running": "Testing {what} · {left} left",
     "test_target_current": "your connection as it is",
     "keep_side": "{side}: keep as it is",
+    "side_auto": "{side}: automatic",
     "test_plan": "The test locks {bands}, then puts your own lock back.",
     "ui_command": "Opens the app in your browser, where the same scan, table and test are "
                   "buttons instead of commands.",

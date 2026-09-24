@@ -18,8 +18,17 @@ function testLock() {
   const chosen = picked();
   const lte = chosen.find((option) => option.side === "lte");
   const nr = chosen.find((option) => option.side === "nr");
-  const scell = lte ? results.sides.lte.order.filter((other) => other !== lte.name).flatMap((other) => results.sides.lte.sets[other]) : [];
-  return { lte: lte ? lte.bands : [], scell, nr: nr ? nr.bands : [] };
+  const scell = lte && lte.bands.length
+    ? results.sides.lte.order.filter((other) => other !== lte.name).flatMap((other) => results.sides.lte.sets[other])
+    : [];
+  return { lte: lte ? lte.bands : null, scell, nr: nr ? nr.bands : null };   // null keeps, [] is automatic
+}
+
+function testPlanWords(plan) {
+  const bands = lockSentence({ lte: plan.lte || [], scell: plan.scell, nr: plan.nr || [] });
+  const automatic = ["lte", "nr"].filter((side) => plan[side] && !plan[side].length)
+    .map((side) => fill(copy.NOTES.side_auto, { side: copy.SIDES[side] }));
+  return [bands, ...automatic].filter(Boolean).join(" · ");
 }
 
 function lockSentence(plan) {
@@ -36,7 +45,7 @@ function lockedWhat(lock) {
 }
 
 function testWhat() {
-  if (state.testTarget === "pick" && picked().length) return lockSentence(testLock());
+  if (state.testTarget === "pick" && picked().length) return testPlanWords(testLock());
   return copy.NOTES.test_target_current;
 }
 
@@ -68,7 +77,7 @@ function testCard() {
   const plan = el("p", { class: "note" });
   const showPlan = () => {
     const chosen = state.testTarget === "pick" && picked().length;
-    plan.textContent = chosen ? fill(copy.NOTES.test_plan, { bands: lockSentence(testLock()) }) : "";
+    plan.textContent = chosen ? fill(copy.NOTES.test_plan, { bands: testPlanWords(testLock()) }) : "";
   };
   const pickers = ["lte", "nr"].map((side) => sidePicker(side, options, disabled || !options.length || state.testTarget !== "pick", showPlan));
   const setPick = (on) => { pickers.forEach((select) => { select.disabled = !on || !options.length; }); showPlan(); };
@@ -115,8 +124,8 @@ async function onTest() {
   const body = { seconds, gap: 10 };
   if (state.testTarget === "pick") {
     const plan = testLock();                             // the same secondaries Apply would keep
-    if (plan.lte.length) { body.lte = plan.lte; body.scell = plan.scell; }
-    if (plan.nr.length) body.nr = plan.nr;
+    if (plan.lte) { body.lte = plan.lte; body.scell = plan.scell; }
+    if (plan.nr) body.nr = plan.nr;
   }
   state.events = []; state.since = 0; state.run = null; state.pollFailures = 0;
   try {

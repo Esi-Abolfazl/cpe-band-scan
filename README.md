@@ -141,7 +141,8 @@ When two bands score close, test them for longer. The form asks two things:
 
 - **Band to test**: your connection as it is, or a 4G band and a 5G band picked from the results.
   A pick is locked for the length of the test and your own lock is put back afterwards, whatever
-  happens. The line under the pickers tells you exactly what will be locked.
+  happens. Picking the auto row puts that side on automatic for the test. The line under the
+  pickers tells you exactly what will be locked.
 - **How long**: 1, 2, 5 or 10 minutes. Two minutes shows whether a band is steady. Ten is the one
   to trust before you settle on it.
 
