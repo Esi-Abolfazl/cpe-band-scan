@@ -1,7 +1,8 @@
 """Whatever ends a scan, the lock the router arrived with goes back, and the run says so."""
+import pytest
 from huawei_lte_api import exceptions as hx
 from cpe_band_scan import scanner, speed
-from cpe_band_scan.router import Router
+from cpe_band_scan.router import Router, RouterError
 from tests.fakes import FakeSession, FakeProbe, Seq, factory
 from tests.fake_scan_router import DEVICE, signal, build, run_scan, _LockAwareSession, ARRIVES_LOCKED, last_write, cancel_scan
 
@@ -170,3 +171,23 @@ def test_closing_the_generator_after_the_restore_does_not_restore_twice():
     events.close()
     puts_back = [data for _, data in session.posts if data["lte_info"]["lock_mode"] != "0"]
     assert len(puts_back) == 1, "the lock the router arrived with is put back once, not twice"
+
+def _puts_back(session):
+    return [data for _, data in session.posts if data["lte_info"]["lock_mode"] != "0"]
+
+def test_a_scan_that_fails_before_its_first_band_still_puts_the_arriving_lock_back():
+    """The up-front clear is the scan's first write, so the restore has to cover it: a signal
+    read failing straight after it used to leave the person on automatic, their lock gone."""
+    router, session = build([hx.ResponseErrorException("x", 1)], lock=ARRIVES_LOCKED)
+    with pytest.raises(RouterError):
+        run_scan(router=router, device=DEVICE, sides=("lte",))
+    assert len(_puts_back(session)) == 1
+    assert last_write(session)["lte_info"]["all_bands"] == "3,7"
+
+def test_a_reader_that_stops_at_run_start_still_gets_the_arriving_lock_back():
+    router, session = build([signal(8)] * 200, lock=ARRIVES_LOCKED)
+    events = scanner.scan(router=router, device=DEVICE, sides=("lte",), sleep=lambda s: None)
+    assert next(events)["type"] == "run_start"
+    events.close()
+    assert len(_puts_back(session)) == 1
+    assert last_write(session)["lte_info"]["all_bands"] == "3,7"

@@ -135,26 +135,26 @@ def scan(router: Router, device, sides=("lte", "nr"), bands=None, cancelled=None
     original = lockfreq.read_lock(router)
     report = probe.start() if probe is not None else None   # over the live link, before any lock change
     per_set = PER_SET + (speed.DURATION if probe is not None else 0)
-    if original["lte"][0] or original["nr"][0]:
-        lockfreq.lock(router)          # a lock in place hides which bands are really on air,
-        sleep(SETTLE)                  # including whether 5G is available here at all
-    baseline = metrics.sample(router)
-    expect_5g = baseline["has5g"]
-    run = {"kind": "scan", "started": _now(), "finished": "", "router_url": router.url,
-           "device": device.as_dict(), "expect_5g": expect_5g, "baseline": baseline,
-           "sides": {}, "applied": {"lte": [], "lte_scell": [], "nr": [], "nr_scell": []}}
-    if report is not None:
-        run["speed"] = report
-    plan = {side: _sets_for(router, side, bands) for side in sides}
-    start = {"type": "run_start", "sides": list(sides), "expect_5g": expect_5g, "baseline": baseline,
-             "plan": {side: {"total": len(sets), "eta_s": len(sets) * per_set}
-                      for side, sets in plan.items()}}
-    if report is not None:
-        start["speed"] = report
-    yield start
-
     settled = stopped = False     # settled: the lock is where the person should be left
-    try:
+    try:                          # from the first write on, whatever ends the scan restores
+        if original["lte"][0] or original["nr"][0]:
+            lockfreq.lock(router)          # a lock in place hides which bands are really on air,
+            sleep(SETTLE)                  # including whether 5G is available here at all
+        baseline = metrics.sample(router)
+        expect_5g = baseline["has5g"]
+        run = {"kind": "scan", "started": _now(), "finished": "", "router_url": router.url,
+               "device": device.as_dict(), "expect_5g": expect_5g, "baseline": baseline,
+               "sides": {}, "applied": {"lte": [], "lte_scell": [], "nr": [], "nr_scell": []}}
+        if report is not None:
+            run["speed"] = report
+        plan = {side: _sets_for(router, side, bands) for side in sides}
+        start = {"type": "run_start", "sides": list(sides), "expect_5g": expect_5g, "baseline": baseline,
+                 "plan": {side: {"total": len(sets), "eta_s": len(sets) * per_set}
+                          for side, sets in plan.items()}}
+        if report is not None:
+            start["speed"] = report
+        yield start
+
         for side in sides:
             sets = plan[side]
             for event in _scan_side(router, side, sets, expect_5g, cancelled, sleep, probe, per_set):
@@ -195,13 +195,13 @@ def trace(router: Router, seconds: int = 120, gap: int = 10, cancelled=None, sle
     lock back afterwards, whatever happens in between."""
     cancelled = cancelled or (lambda: False)
     original = lockfreq.read_lock(router)
-    if lte or nr:
-        lockfreq.lock(router, lte=lte or original["lte"][0], lte_scell=lte_scell if lte else original["lte"][1],
-                      nr=nr or original["nr"][0], nr_scell=() if nr else original["nr"][1])
-        sleep(SETTLE)
-    started, rows = _now(), []
-    yield {"type": "trace_start", "seconds": seconds, "gap": gap, "lock": lockfreq.read_lock(router)}
     try:
+        if lte or nr:
+            lockfreq.lock(router, lte=lte or original["lte"][0], lte_scell=lte_scell if lte else original["lte"][1],
+                          nr=nr or original["nr"][0], nr_scell=() if nr else original["nr"][1])
+            sleep(SETTLE)
+        started, rows = _now(), []
+        yield {"type": "trace_start", "seconds": seconds, "gap": gap, "lock": lockfreq.read_lock(router)}
         for index in range(seconds // gap):
             if cancelled():
                 yield {"type": "cancelled", "side": "trace"}

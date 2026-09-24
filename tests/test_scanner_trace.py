@@ -2,6 +2,8 @@
 import pytest
 from huawei_lte_api import exceptions as hx
 from cpe_band_scan import scanner, speed
+from cpe_band_scan.router import RouterError
+from tests.fakes import Seq
 from tests.fake_scan_router import signal, build, ARRIVES_LOCKED
 
 
@@ -48,3 +50,20 @@ def test_a_trace_can_lock_a_4g_and_a_5g_band_together_with_secondaries():
     first = [p[1] for p in session.posts if p[0] == "net/lock-freq"][0]
     assert first["lte_info"]["all_bands"] == "1,3"
     assert first["nr_info"]["freq_infos"]["freq_info"] == [{"band": "78"}]
+
+def test_a_test_whose_lock_read_back_fails_still_puts_the_arriving_lock_back():
+    """The test lock is the first write, so the restore must cover the read that follows it."""
+    router, session = build([signal(8)] * 50, lock=ARRIVES_LOCKED)
+    session.data["net/lock-freq"] = Seq([ARRIVES_LOCKED, hx.ResponseErrorException("x", 1)])
+    with pytest.raises(RouterError):
+        list(scanner.trace(router, seconds=20, gap=10, sleep=lambda s: None, lte=["3"]))
+    writes = [p[1] for p in session.posts if p[0] == "net/lock-freq"]
+    assert writes[-1]["lte_info"]["freq_infos"]["freq_info"] == [{"band": "7"}]
+
+def test_a_reader_that_stops_at_trace_start_still_gets_the_arriving_lock_back():
+    router, session = build([signal(8)] * 50, lock=ARRIVES_LOCKED)
+    events = scanner.trace(router, seconds=20, gap=10, sleep=lambda s: None, lte=["3"])
+    assert next(events)["type"] == "trace_start"
+    events.close()
+    writes = [p[1] for p in session.posts if p[0] == "net/lock-freq"]
+    assert len(writes) == 2 and writes[-1]["lte_info"]["freq_infos"]["freq_info"] == [{"band": "7"}]
