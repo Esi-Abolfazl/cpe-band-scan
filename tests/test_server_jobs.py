@@ -252,7 +252,7 @@ def test_a_test_of_a_chosen_band_locks_it_and_puts_the_lock_back(live, monkeypat
     connect(port, session)
     call(port, "POST", ROUTES["test"], {"seconds": 20, "gap": 10, "lte": ["3"]}, token=session.token)
     events = drain(port, session)
-    assert events[0]["lock"]["lte"][0] == ["7"]     # the fake's read is static; the writes tell
+    assert events[0]["plan"] == {"lte": ["3"], "scell": [], "nr": None}
     writes = [payload for endpoint, payload in _LTE_LOCKED_FAKE.posts if endpoint == "net/lock-freq"]
     assert writes[-2]["lte_info"]["freq_infos"]["freq_info"] == [{"band": "3"}]
     assert writes[-1]["lte_info"]["freq_infos"]["freq_info"] == [{"band": "7"}]

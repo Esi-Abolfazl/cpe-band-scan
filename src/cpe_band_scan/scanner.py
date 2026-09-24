@@ -204,7 +204,8 @@ def trace(router: Router, seconds: int = 120, gap: int = 10, cancelled=None, sle
             lockfreq.lock(router, lte=lte_lock[0], lte_scell=lte_lock[1], nr=nr_lock[0], nr_scell=nr_lock[1])
             sleep(SETTLE)
         started, rows = _now(), []
-        yield {"type": "trace_start", "seconds": seconds, "gap": gap, "lock": lockfreq.read_lock(router)}
+        yield {"type": "trace_start", "seconds": seconds, "gap": gap,
+               "plan": {"lte": lte, "scell": list(lte_scell), "nr": nr}}
         for index in range(seconds // gap):
             if cancelled():
                 yield {"type": "cancelled", "side": "trace"}

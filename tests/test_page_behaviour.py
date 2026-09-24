@@ -1,7 +1,7 @@
 """What the page does and sends, executed in Node rather than read from its source."""
 import json
 
-from cpe_band_scan import api
+from cpe_band_scan import api, copy
 from tests import page
 
 RESULTS = {"sides": {"lte": {"order": ["B7", "auto", "B3"], "sets": {"B7": ["7"], "auto": [], "B3": ["3"]},
@@ -68,3 +68,20 @@ def test_a_failed_profile_read_keeps_the_list_and_says_why():
             "error": "store_unreadable", "message": "Can't read profiles.json"}}})
     assert ran["result"] == ["Home"]
     assert ran["banner"] == "Can't read profiles.json"
+
+
+def resumed_words(plan):
+    return page.run(["app.js", "test.js", "scan.js"], f"""
+        state.kind = "test";
+        state.events = [{{ type: "trace_start", seconds: 60, gap: 10, plan: {json.dumps(plan)} }}];
+        startLive();
+        return state.live.what;""")["result"]
+
+
+def test_a_reloaded_test_says_what_it_changes_the_way_the_live_page_did():
+    """Regression: after a reload the page worded the router's whole lock, so a 4G-automatic
+    test read "Locked to N78" and a test of the connection as it is read as a lock."""
+    live = start_test(lte="auto")["result"]
+    assert resumed_words({"lte": [], "scell": [], "nr": None}) == live
+    as_it_is = resumed_words({"lte": None, "scell": [], "nr": None})
+    assert as_it_is == copy.NOTES["test_target_current"]

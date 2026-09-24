@@ -40,15 +40,8 @@ function lockSentence(plan) {
   return parts.join(" · ");
 }
 
-function lockedWhat(lock) {
-  const [lte, scell] = lock.lte;
-  const sentence = lockSentence({ lte, scell, nr: lock.nr[0] });
-  return sentence || copy.NOTES.test_target_current;
-}
-
-function testWhat() {
-  if (state.testTarget === "pick" && picked().length) return testPlanWords(testLock());
-  return copy.NOTES.test_target_current;
+function testWhat(plan = state.testTarget === "pick" ? testLock() : null) {
+  return (plan && testPlanWords(plan)) || copy.NOTES.test_target_current;
 }
 
 function currentLockWords() {

@@ -81,3 +81,8 @@ def test_a_test_of_automatic_clears_that_side_and_puts_the_arriving_lock_back():
     writes = [p[1] for p in session.posts if p[0] == "net/lock-freq"]
     assert writes[0]["lte_info"]["lock_mode"] == "0"
     assert writes[-1]["lte_info"]["freq_infos"]["freq_info"] == [{"band": "7"}]
+
+def test_trace_start_carries_what_the_test_changes_none_meaning_kept():
+    router, _ = build([signal(8)] * 50)
+    start = next(scanner.trace(router, seconds=10, gap=10, sleep=lambda s: None, lte=[]))
+    assert start["plan"] == {"lte": [], "scell": [], "nr": None}

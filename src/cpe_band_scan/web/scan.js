@@ -197,7 +197,7 @@ function applyEvent(event) {
 function startLive() {
   if (state.kind === "test") {
     const start = state.events.find((event) => event.type === "trace_start");
-    state.live = buildTestLive(start ? start.seconds : 120, start && start.lock ? lockedWhat(start.lock) : testWhat());
+    state.live = buildTestLive(start ? start.seconds : 120, testWhat(start && start.plan));
   } else {
     const start = state.events.find((event) => event.type === "run_start");
     state.live = buildScanLive(start ? start.sides : SCOPES[state.scope]);
