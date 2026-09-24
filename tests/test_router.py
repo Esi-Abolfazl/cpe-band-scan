@@ -114,3 +114,23 @@ def test_a_write_to_a_router_that_went_away_is_reported_as_unreachable():
     with pytest.raises(RouterError) as caught:
         router.post("net/lock-freq", OrderedDict())
     assert caught.value.code == "unreachable"
+
+
+def test_a_router_that_accepts_but_never_answers_is_unreachable_not_a_hang(monkeypatch):
+    """Without a timeout the library waits forever, and a scan stuck inside a read never
+    reaches the finally that puts the person's lock back."""
+    import socket
+    import time
+    from cpe_band_scan import router as router_module
+
+    monkeypatch.setattr(router_module, "TIMEOUT", (0.2, 0.2))
+    listener = socket.create_server(("127.0.0.1", 0))
+    try:
+        router = Router(f"127.0.0.1:{listener.getsockname()[1]}", "pw")
+        began = time.monotonic()
+        with pytest.raises(RouterError) as caught:
+            router.get("device/signal")
+        assert caught.value.code == "unreachable"
+        assert time.monotonic() - began < 5
+    finally:
+        listener.close()

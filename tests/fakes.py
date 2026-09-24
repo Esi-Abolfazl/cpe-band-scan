@@ -32,7 +32,7 @@ class FakeSession:
 def factory(session=None, connect_error=None):
     """Build a connection_factory for Router. `connect_error` fires at login time."""
 
-    def make(url, username=None, password=None):
+    def make(url, username=None, password=None, timeout=None):
         if connect_error is not None:
             raise connect_error
         return session if session is not None else FakeSession()

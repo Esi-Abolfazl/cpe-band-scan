@@ -15,6 +15,7 @@ LOGIN_WRONG = (
     hx.LoginErrorUsernameWrongException,
     hx.LoginErrorInvalidCredentialsException,
 )
+TIMEOUT = (5, 30)   # seconds to connect, to read; a lock-freq write on firmware 4.x takes a few
 
 
 class RouterError(Exception):
@@ -55,7 +56,7 @@ class Router:
             # a CPE with no admin password at all cannot be signed into by this app
             raise RouterError("no_password")
         try:
-            return self._factory(self.url, username=self.username, password=self._password)
+            return self._factory(self.url, username=self.username, password=self._password, timeout=TIMEOUT)
         except LOGIN_WRONG as error:
             raise RouterError("bad_password", str(error)) from error
         except hx.LoginErrorUsernamePasswordOverrunException as error:
