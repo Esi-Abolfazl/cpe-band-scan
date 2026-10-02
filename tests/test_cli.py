@@ -285,3 +285,14 @@ def test_the_5g_rows_show_the_5g_floor_and_a_dash_when_the_run_predates_it():
     at = cli.column_keys(run).index("floor") + 1
     floors = [line.split("|")[at].strip() for line in cli.results_table(run).splitlines()[2:]]
     assert floors == ["-8", "11", "—"]
+
+
+def test_a_terminal_test_ends_with_its_summary(monkeypatch, capsys):
+    """Regression: `test` printed only its samples, so two tests had no Lowest line to compare."""
+    from tests.fake_scan_router import DEVICE
+    summary = {"floor": 7.5, "sinr": 9.0, "rsrq": -9.0, "rsrp": -80.0, "has5g": True, "band": "B7(N78)"}
+    done = {"type": "trace_done", "run": {"kind": "test", "summary": summary, "samples": []}}
+    monkeypatch.setattr(cli, "connect", lambda args: (None, DEVICE))
+    monkeypatch.setattr(cli.scanner, "trace", lambda router: iter([done]))
+    assert cli.main(["test"]) == 0
+    assert f"{copy.COLUMNS['floor']['label']}: 7.5 dB" in capsys.readouterr().out

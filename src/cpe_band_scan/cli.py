@@ -243,6 +243,7 @@ def main(argv=None) -> int:
                     print(f"[{datetime.now():%H:%M:%S}] {line}", flush=True)
                 if event["type"] == "trace_done":
                     run = event["run"]
+            print("\n" + trace_table(run))
             saved = store.save(run, name=store.default_name(device.carrier))
             print(copy.text("PROGRESS", "saved", name=saved["name"]))
         elif command == "scan":
