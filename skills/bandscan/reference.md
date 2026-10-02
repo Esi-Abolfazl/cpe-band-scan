@@ -17,9 +17,10 @@ still go in the refusal text, so a report names the model, the firmware and the 
 | B525, B818, B535, H112-370, H122-373 on **3.x/2.x** (jQuery web UI) | `api/net/net-mode` | `api/net/net-mode` with `<NetworkMode>00</NetworkMode><NetworkBand>3FFFFFFF</NetworkBand><LTEBand>hex</LTEBand>` | Classic path used by huawei-lte-api `set_net_mode` and the community userscripts. No NR lock. |
 | Anything else | `api/device/information` first | none | Stop and show the user the device/firmware line. |
 
-The driver itself lives in `src/cpe_band_scan/device.py` in this repository; this table is the
-reasoning behind it, not a second implementation. A new firmware family means a new driver module
-there and a new row here.
+The driver is chosen by `probe()` in `src/cpe_band_scan/device.py`, and every write goes through
+the only driver, `src/cpe_band_scan/lockfreq.py`. This table is the reasoning behind them, not a
+second implementation. A new firmware family means a new driver module next to `lockfreq.py`, a
+branch in `probe()`, and a new row here.
 
 ## `api/net/lock-freq` (the 4.x and 10.x web UI)
 
