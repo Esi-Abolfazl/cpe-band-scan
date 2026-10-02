@@ -165,7 +165,7 @@ COLUMNS = {
     "floor": {"label": "Lowest", "help": "Lowest SINR seen, in dB, of the carrier the table is rated on. Above 0 usable, above 5 comfortable."},
     "sinr": {"label": "Typical", "help": "The middle SINR reading of the measurement, in dB. "
                                                   "Higher is better."},
-    "rsrq": {"label": "Channel", "help": "RSRQ in dB. Better than -12 is healthy."},
+    "rsrq": {"label": "Channel", "help": "RSRQ in dB. -13 or better rates Good, -10 or better Excellent."},
     "rsrp": {"label": "Strength", "help": "RSRP in dBm. Above -90 it barely matters."},
     "nr_sinr": {"label": "5G quality", "help": "SINR of the 5G carrier in dB, when one was connected."},
     "five_g": {"label": "5G", "help": "Whether the 5G carrier stayed up on this band. Bands that lose it "

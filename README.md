@@ -117,7 +117,7 @@ One table per network, best first. Columns:
 | Ping | time to reach the internet in ms, the middle of five tries. Under 50 feels instant, over 150 you notice |
 | Lowest | the lowest SINR seen, in dB: the 4G carrier's on the 4G table, the 5G carrier's on the 5G table. This is what makes a call or a stream stutter. Above 0 is usable, above 5 is comfortable |
 | Typical | the middle SINR reading, in dB |
-| Channel | RSRQ in dB. Better than -12 is healthy |
+| Channel | RSRQ in dB. -13 or better rates Good, -10 or better Excellent |
 | Strength | RSRP in dBm. Above -90 it barely affects speed |
 | 5G quality | SINR of the 5G carrier, when one was connected |
 | Carriers | the carriers the router combined on this band |

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from cpe_band_scan import copy
+from cpe_band_scan import copy, metrics
 
 SRC = Path(__file__).resolve().parents[1] / "src" / "cpe_band_scan"
 CALLERS = "".join(path.read_text(encoding="utf-8") for path in SRC.rglob("*")
@@ -149,3 +149,11 @@ def test_speed_and_ping_columns_exist_and_say_they_are_one_moment():
 def test_the_probe_log_lines_carry_speed_and_ping():
     for key in ("log_result_probe", "set_result_probe"):
         assert "{mbps}" in copy.PROGRESS[key] and "{ping}" in copy.PROGRESS[key]
+
+
+def test_the_rsrq_and_floor_help_quote_the_cutoffs_the_rating_uses():
+    """Regression: the help said -12 dB while the rating cut at -13, so a Good band read as unhealthy."""
+    numbers = lambda key: {float(n) for n in re.findall(r"-?\d+", copy.COLUMNS[key]["help"])}
+    (_, excellent_floor, excellent_rsrq), (_, good_floor, good_rsrq) = metrics.GRADES[:2]
+    assert numbers("rsrq") == {excellent_rsrq, good_rsrq}
+    assert numbers("floor") == {excellent_floor, good_floor}
