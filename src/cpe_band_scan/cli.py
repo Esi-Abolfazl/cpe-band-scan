@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import getpass
 import json
+import signal
 import sys
 from datetime import datetime
 
@@ -187,7 +188,14 @@ def _print_help() -> int:
     return 0
 
 
+def _stop(*_):
+    """SIGTERM (a stopped background task) skips every finally and would leave the router on a
+    test band; as a KeyboardInterrupt it puts the lock back the way Ctrl-C does."""
+    raise KeyboardInterrupt
+
+
 def main(argv=None) -> int:
+    signal.signal(signal.SIGTERM, _stop)
     args = parse(argv)
     command = args.command or "help"
     if command == "help":
